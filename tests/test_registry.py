@@ -113,7 +113,7 @@ def test_expected_kind_match_passes() -> None:
 def test_put_rejects_unknown_kind() -> None:
     r = LogRegistry()
     with pytest.raises(InvalidKind):
-        r.put("ocel", None)  # type: ignore[arg-type]
+        r.put("not_a_kind", None)  # type: ignore[arg-type]
 
 
 def test_rejects_invalid_capacity() -> None:

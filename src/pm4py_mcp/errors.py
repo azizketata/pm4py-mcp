@@ -36,3 +36,21 @@ class GraphvizMissing(Pm4pyMcpError):
     are not enough. Install from https://graphviz.org/download/ and restart the
     MCP server so the updated PATH is picked up.
     """
+
+
+class OptionalDepMissing(Pm4pyMcpError):
+    """An optional dependency required for the requested operation is not installed.
+
+    Raised, e.g., when a user tries to load a relational (parquet-backed) OCEL
+    without having installed the ``[ocel]`` extra (``pyarrow``). Carries the
+    missing module name and the install hint so the LLM can surface an actionable
+    remediation to the user.
+    """
+
+    def __init__(self, module: str, install_hint: str) -> None:
+        self.module = module
+        self.install_hint = install_hint
+        super().__init__(
+            f"Optional dependency {module!r} is not installed. "
+            f"Install via `{install_hint}` and retry."
+        )

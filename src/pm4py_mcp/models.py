@@ -59,6 +59,40 @@ class WorkspaceEntry:
 
 
 @dataclass(frozen=True)
+class OcelSummary:
+    """Compact summary of an OCEL 2.0 event log.
+
+    Returned by ``load_ocel`` and ``describe_ocel``. Caps previews so a
+    BPI-Challenge-sized OCEL still fits under Claude Desktop's response ceiling.
+    """
+
+    ocel_id: str
+    num_events: int
+    num_objects: int
+    num_object_types: int
+    object_types: list[str]  # capped to 20, alphabetical
+    events_per_object_type: dict[str, int]  # top 10 by count
+    num_activities: int
+    activities_preview: list[str]  # capped to 20, alphabetical
+    time_range: tuple[str, str]  # ISO-8601 strings
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class OcelExportResult:
+    """Returned by ``export_ocel`` — output path, format, size."""
+
+    path: str
+    format: str  # "jsonocel" | "xmlocel" | "sqlite"
+    size_bytes: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class FilterResult:
     """Returned by every ``filter_*`` tool.
 

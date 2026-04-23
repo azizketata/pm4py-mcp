@@ -1,0 +1,204 @@
+{
+  "objectTypes": [
+    {
+      "name": "delivery",
+      "attributes": []
+    },
+    {
+      "name": "item",
+      "attributes": []
+    },
+    {
+      "name": "order",
+      "attributes": []
+    }
+  ],
+  "eventTypes": [
+    {
+      "name": "Deliver",
+      "attributes": []
+    },
+    {
+      "name": "Pick Item",
+      "attributes": []
+    },
+    {
+      "name": "Place Order",
+      "attributes": []
+    },
+    {
+      "name": "Ship",
+      "attributes": []
+    }
+  ],
+  "objects": [
+    {
+      "id": "o1",
+      "type": "order"
+    },
+    {
+      "id": "o2",
+      "type": "order"
+    },
+    {
+      "id": "i1",
+      "type": "item"
+    },
+    {
+      "id": "i2",
+      "type": "item"
+    },
+    {
+      "id": "i3",
+      "type": "item"
+    },
+    {
+      "id": "i4",
+      "type": "item"
+    },
+    {
+      "id": "d1",
+      "type": "delivery"
+    },
+    {
+      "id": "d2",
+      "type": "delivery"
+    }
+  ],
+  "events": [
+    {
+      "id": "e01",
+      "type": "Place Order",
+      "time": "2024-01-01T08:00:00Z",
+      "relationships": [
+        {
+          "objectId": "o1",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e02",
+      "type": "Pick Item",
+      "time": "2024-01-01T08:30:00Z",
+      "relationships": [
+        {
+          "objectId": "o1",
+          "qualifier": "default"
+        },
+        {
+          "objectId": "i1",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e03",
+      "type": "Pick Item",
+      "time": "2024-01-01T08:45:00Z",
+      "relationships": [
+        {
+          "objectId": "o1",
+          "qualifier": "default"
+        },
+        {
+          "objectId": "i2",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e04",
+      "type": "Ship",
+      "time": "2024-01-01T10:00:00Z",
+      "relationships": [
+        {
+          "objectId": "o1",
+          "qualifier": "default"
+        },
+        {
+          "objectId": "d1",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e05",
+      "type": "Deliver",
+      "time": "2024-01-01T14:00:00Z",
+      "relationships": [
+        {
+          "objectId": "d1",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e06",
+      "type": "Place Order",
+      "time": "2024-01-01T09:00:00Z",
+      "relationships": [
+        {
+          "objectId": "o2",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e07",
+      "type": "Pick Item",
+      "time": "2024-01-01T09:30:00Z",
+      "relationships": [
+        {
+          "objectId": "o2",
+          "qualifier": "default"
+        },
+        {
+          "objectId": "i3",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e08",
+      "type": "Pick Item",
+      "time": "2024-01-01T09:45:00Z",
+      "relationships": [
+        {
+          "objectId": "o2",
+          "qualifier": "default"
+        },
+        {
+          "objectId": "i4",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e09",
+      "type": "Ship",
+      "time": "2024-01-01T11:00:00Z",
+      "relationships": [
+        {
+          "objectId": "o2",
+          "qualifier": "default"
+        },
+        {
+          "objectId": "d2",
+          "qualifier": "default"
+        }
+      ]
+    },
+    {
+      "id": "e10",
+      "type": "Deliver",
+      "time": "2024-01-01T15:30:00Z",
+      "relationships": [
+        {
+          "objectId": "d2",
+          "qualifier": "default"
+        }
+      ]
+    }
+  ]
+}

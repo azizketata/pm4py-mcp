@@ -16,6 +16,7 @@ from typing import Any, Literal, cast
 import pandas as pd
 import pm4py
 
+from pm4py_mcp._time import normalize_datetime as _normalize_datetime
 from pm4py_mcp.models import FilterResult
 from pm4py_mcp.server import mcp, registry
 
@@ -23,17 +24,6 @@ from pm4py_mcp.server import mcp, registry
 def _counts(log: pd.DataFrame) -> tuple[int, int]:
     """Return (num_cases, num_events) for a pm4py-formatted DataFrame."""
     return int(log["case:concept:name"].nunique()), len(log)
-
-
-def _normalize_datetime(value: str) -> str:
-    """Convert an ISO-8601 datetime string to pm4py's expected format.
-
-    pm4py.filter_time_range calls ``datetime.strptime`` with the format
-    ``'%Y-%m-%d %H:%M:%S'`` — it does not accept the ``T`` separator.
-    Pandas ``to_datetime`` happily parses either form, so we round-trip
-    through it to normalize.
-    """
-    return str(pd.to_datetime(value).strftime("%Y-%m-%d %H:%M:%S"))
 
 
 def _wrap(
