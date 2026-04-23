@@ -93,6 +93,45 @@ class OcelExportResult:
 
 
 @dataclass(frozen=True)
+class AbstractionResult:
+    """Token-budget-aware natural-language description of a PM artifact.
+
+    Returned by every ``abstract_*`` tool. Claude reasons over ``content``
+    as text; ``approx_tokens`` lets the agent plan around its context budget;
+    ``truncated`` signals that pm4py hit the MAX_LEN cap and cut the output.
+    """
+
+    content: str
+    approx_tokens: int
+    truncated: bool
+    source_handle: str
+    tool: str
+
+    @classmethod
+    def build(
+        cls,
+        content: str,
+        max_len: int | None,
+        source_handle: str,
+        tool: str,
+    ) -> AbstractionResult:
+        """Build from pm4py's raw str output. ``max_len=None`` disables the truncation flag."""
+        from pm4py_mcp._tokens import estimate_tokens
+
+        truncated = max_len is not None and len(content) >= max_len
+        return cls(
+            content=content,
+            approx_tokens=estimate_tokens(content),
+            truncated=truncated,
+            source_handle=source_handle,
+            tool=tool,
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class OcelFilterResult:
     """Returned by every ``filter_ocel_*`` tool.
 

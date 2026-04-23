@@ -66,6 +66,24 @@ Claude chains `load_ocel` → `describe_ocel` → `flatten_ocel(object_type="ord
 
 The [bundled OCEL](examples/order-management.jsonocel) is a 3.7 KB synthetic order-management process with 3 object types (order, item, delivery), 10 events, 8 objects.
 
+### Try it on a real log
+
+The bundled examples are tiny by design. To try pm4py-mcp on real-sized public logs, run the downloader script once (stdlib-only, no extra deps):
+
+```bash
+uv run python scripts/download_benchmark_logs.py --list          # show available benchmarks
+uv run python scripts/download_benchmark_logs.py sepsis          # ~200 KB — hospital sepsis pathway (default)
+uv run python scripts/download_benchmark_logs.py bpi2012         # ~3 MB — loan applications
+uv run python scripts/download_benchmark_logs.py bpi2017         # ~28 MB — richer loan-application log
+uv run python scripts/download_benchmark_logs.py all             # all three
+```
+
+Files land in `examples/benchmarks/` (gitignored — the script is idempotent and MD5-verifies on download). Then in Claude:
+
+> "Load the log at `examples/benchmarks/sepsis.xes.gz`. Describe it, then discover a Petri net and show me the diagram."
+
+Sepsis is the canonical teaching log: **1050 cases, 15214 events, 16 activities** of a real hospital sepsis pathway from 2013–2015 (Mannhardt 2016).
+
 ## Tool catalog (Phase 1 + 2 Part 1 — 36 tools)
 
 All tools accept a handle (`log_id`, `petri_id`, `ocel_id`, …) or — for `load_*` tools — a file path. None returns the log itself; responses are always compact summaries plus new handles.

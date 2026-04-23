@@ -11,7 +11,9 @@ Ordering does not matter — each submodule is independent.
 from __future__ import annotations
 
 from pm4py_mcp.tools import (  # noqa: F401
+    abstractions,
     conformance,
+    context,
     discovery,
     filters,
     io,

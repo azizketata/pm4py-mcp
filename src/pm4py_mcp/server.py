@@ -41,9 +41,10 @@ def main() -> None:
     mcp.run()
 
 
-# Phase 1 tool registration. Imported for side effects (decorator evaluation).
-# Must come after ``mcp`` and ``registry`` are defined above — tool modules
-# import those singletons at module load.
+# Phase 1+2 tool + Phase 3 prompt registration. Imported for side effects
+# (decorator evaluation). Must come after ``mcp`` and ``registry`` are defined
+# above — tool and prompt modules import those singletons at module load.
+from pm4py_mcp import prompts as _prompts  # noqa: E402, F401
 from pm4py_mcp import tools as _tools  # noqa: E402, F401
 
 if __name__ == "__main__":

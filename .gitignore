@@ -93,6 +93,14 @@ workspace/
 !examples/**/*.xes
 !examples/**/*.jsonocel
 
+# Benchmark logs are downloaded on demand via scripts/download_benchmark_logs.py
+# — they're public datasets, no need to vendor copies in the repo
+examples/benchmarks/*.xes
+examples/benchmarks/*.xes.gz
+examples/benchmarks/*.jsonocel
+examples/benchmarks/*.sqlite
+!examples/benchmarks/.gitkeep
+
 # Secrets
 *.key
 *.pem

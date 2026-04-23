@@ -138,3 +138,13 @@ def tiny_ocel_file(tmp_path: Path) -> Path:
     out = tmp_path / "tiny.jsonocel"
     pm4py.write_ocel2(ocel, str(out))
     return out
+
+
+def tiny_petri_net() -> tuple:  # type: ignore[type-arg]
+    """Discover a Petri net from ``tiny_log()`` via the Inductive Miner.
+
+    Returns ``(net, initial_marking, final_marking)`` — the shape Phase 1
+    stores under a ``petri_net`` kind handle. Tests that need a ``petri_id``
+    should call this and put the tuple into the registry themselves.
+    """
+    return pm4py.discover_petri_net_inductive(tiny_log())
