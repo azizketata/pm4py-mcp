@@ -10,6 +10,6 @@ Ordering does not matter — each submodule is independent.
 
 from __future__ import annotations
 
-from pm4py_mcp.tools import io, stats  # noqa: F401
+from pm4py_mcp.tools import discovery, io, stats, visualization  # noqa: F401
 
 __all__: list[str] = []
