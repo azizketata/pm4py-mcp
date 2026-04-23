@@ -6,6 +6,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - TBD
+
+Phase 2 Part 1 — **OCEL 2.0 support.** 12 new tools bring the total surface to **36 tools**. This is the decisive differentiator: no commercial MCP supports OCEL 2.0 (object-centric event logs). Phase 2 Part 2 (advanced discovery — DECLARE, POWL, log skeleton, organizational mining, conversions, simulation, advanced viz) defers to a separate 0.3.0 plan.
+
+### Added
+
+**OCEL 2.0 I/O + workspace (4 tools)**
+- `load_ocel(path)` — auto-dispatches JSON-OCEL (`.jsonocel` / `.json`), XML-OCEL (`.xmlocel` / `.xml`), and SQLite-OCEL (`.sqlite`). Detects missing `pyarrow` for relational OCELs and raises `OptionalDepMissing` with the `pm4py-mcp[ocel]` install hint.
+- `describe_ocel(ocel_id)` — compact summary: event/object counts, object types (capped to 20), events-per-object-type (top 10), activities preview, time range.
+- `flatten_ocel(ocel_id, object_type)` — **the Phase 2 composability bridge.** Projects an OCEL onto a single object type and returns a traditional `log_id` that composes with every Phase 1 tool (discover, conform, filter, visualize). This single tool is what lets pm4py-mcp offer object-centric process mining without duplicating the entire Phase 1 surface.
+- `export_ocel(ocel_id, format, path)` — JSON-OCEL / XML-OCEL / SQLite output. Bare filenames land in the workspace.
+
+**OCEL discovery (2 tools)**
+- `discover_ocdfg(ocel_id)` — object-centric directly-follows graph. Returns an `ocdfg_id` plus per-object-type edge counts + activity totals.
+- `discover_oc_petri_net(ocel_id, variant)` — object-centric Petri net. `variant` ∈ `{"im", "imd"}`; returns an `ocpn_id` plus per-object-type (places, transitions, arcs) counts.
+
+**OCEL visualization (2 tools)**
+- `visualize_ocdfg(ocdfg_id)` — dual-channel PNG + SVG render with per-object-type colored edges (orders, items, deliveries each in their own color).
+- `visualize_oc_petri_net(ocpn_id)` — dual-channel OCPN render showing cross-type object flows through shared transitions.
+
+**OCEL filtering (4 tools — aggressively consolidated)**
+These 4 tools wrap 7 separate PM4Py filter functions via `level` / `strategy` dispatch. Every filter mints a fresh `ocel_id` and returns both event AND object counts before/after.
+- `filter_ocel_time_range(ocel_id, start, end)` — reuses the ISO-8601-to-pm4py timestamp normalizer extracted from Phase 1.
+- `filter_ocel_attribute(ocel_id, attribute, values, level, retain)` — `level` ∈ `{"event", "object"}` dispatches to `pm4py.filter_ocel_event_attribute` / `filter_ocel_object_attribute`.
+- `filter_ocel_object_types(ocel_id, types, retain)` — keep or drop entire object types.
+- `filter_ocel_cc(ocel_id, strategy, value, retain)` — connected-component filtering with `strategy` ∈ `{"activity", "object", "otype", "length"}`. For `"length"`, `value` is `[min, max]`; for the others, `value` is a string.
+
+**Infrastructure**
+- Registry extended with 3 new kinds (`ocel`, `ocdfg`, `ocpn`) and prefixes (`ocel-`, `ocdfg-`, `ocpn-`).
+- `OcelSummary`, `OcelExportResult`, `OcelFilterResult` dataclasses in `models.py`.
+- `OptionalDepMissing` exception for missing optional dependencies (e.g., `pyarrow` for relational OCEL).
+- `src/pm4py_mcp/_time.py` — `normalize_datetime` extracted to a shared module, reused by Phase 1 `filter_time_range` and Phase 2 `filter_ocel_time_range`.
+- `examples/order-management.jsonocel` — 3.7 KB synthetic OCEL with 3 object types (order, item, delivery), 10 events, 8 objects, 16 relations.
+- `scripts/generate_example_ocel.py` — regenerates the bundled OCEL deterministically.
+- End-to-end OCEL workflow test in [tests/test_workflow_ocel_stdio.py](tests/test_workflow_ocel_stdio.py): load → describe → flatten → **Phase 1 discover_petri_net on the flattened log** → filter → export, all over a real stdio subprocess.
+
+### Requires
+
+- **`[ocel]` extra** (`pip install 'pm4py-mcp[ocel]'` or `uv sync --extra ocel`) is only needed for **relational (parquet-backed)** OCELs. JSON-OCEL, XML-OCEL, and SQLite-OCEL work without any additional dependencies.
+- **Graphviz** — same system binary as Phase 1. OCEL visualizations use the same Graphviz backend (`save_vis_ocdfg`, `save_vis_ocpn`).
+
+### Fixed (during Phase 2)
+
+- OCPN viz caption previously reported "0 places, 0 arcs" because `OCPetriNet["places"]` returned empty dict instead of the flat set (attribute access works, dict access doesn't). `visualize_oc_petri_net` now computes totals from the authoritative `petri_nets` sub-dict.
+
+### Design note — consolidation over mirroring
+
+PM4Py exposes 7 separate OCEL filter functions and 2 attribute-filter functions. Phase 2 wraps them into **4** tools using `strategy` / `level` params. This was an explicit choice at planning time: smaller tool surface ⇒ smaller prompt footprint for the LLM ⇒ cleaner disambiguation between similar verbs. The consolidation keeps the total 0.2.0 tool count at 36 instead of 40+.
+
+### Known limitations
+
+- PM4Py's `filter_ocel_cc_*` family is marked experimental — expect occasional edge-case failures on malformed OCELs. Pinned `pm4py>=2.7,<3` to insulate against API drift.
+- No OCEL-specific conformance tools in 0.2.0 — use `flatten_ocel` to project onto a single object type, then Phase 1 `conformance_*` tools.
+- Advanced discovery (DECLARE, log skeleton, temporal profile, POWL, organizational mining), model conversions, simulation, and advanced visualizations (dotted chart, performance spectrum) are deferred to 0.3.0.
+
 ## [0.1.0] - TBD
 
 Phase 1 — core traditional-log toolkit. 23 new tools bring the total surface to **24 tools** covering the minimum-viable PM4Py slice that a process-mining analyst can drive from Claude.
@@ -89,6 +144,7 @@ First PyPI release claiming the `pm4py-mcp` name. No user-facing functionality b
 - CI matrix: Python 3.10–3.13 × Ubuntu / macOS / Windows.
 - PyPI Trusted Publishing workflow: TestPyPI for pre-release tags, PyPI for release tags.
 
-[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.1.0
 [0.0.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.0.1
