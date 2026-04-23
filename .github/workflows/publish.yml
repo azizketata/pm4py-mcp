@@ -31,7 +31,7 @@ jobs:
     name: Publish to TestPyPI
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, 'a')
+    if: startsWith(github.ref_name, 'v') && (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc'))
     environment:
       name: testpypi
       url: https://test.pypi.org/project/pm4py-mcp/
@@ -52,7 +52,7 @@ jobs:
     name: Publish to PyPI
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'a') && !contains(github.ref, 'b') && !contains(github.ref, 'rc')
+    if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'a') && !contains(github.ref_name, 'b') && !contains(github.ref_name, 'rc')
     environment:
       name: pypi
       url: https://pypi.org/project/pm4py-mcp/
@@ -71,7 +71,7 @@ jobs:
     name: Create GitHub Release
     needs: [publish-pypi]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'a') && !contains(github.ref, 'b') && !contains(github.ref, 'rc')
+    if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'a') && !contains(github.ref_name, 'b') && !contains(github.ref_name, 'rc')
     permissions:
       contents: write
     steps:
