@@ -65,12 +65,8 @@ def visualize_oc_petri_net(ocpn_id: str) -> list[Any]:
     # ``ocpn["petri_nets"]`` is the authoritative per-object-type breakdown.
     # OCPetriNet exposes a flat ``.places`` / ``.arcs`` attribute but it's not
     # accessible via dict-style ``ocpn["places"]``, so sum from petri_nets.
-    total_places = sum(
-        len(triple[0].places) for triple in ocpn.get("petri_nets", {}).values()
-    )
-    total_arcs = sum(
-        len(triple[0].arcs) for triple in ocpn.get("petri_nets", {}).values()
-    )
+    total_places = sum(len(triple[0].places) for triple in ocpn.get("petri_nets", {}).values())
+    total_arcs = sum(len(triple[0].arcs) for triple in ocpn.get("petri_nets", {}).values())
     caption = (
         f"OC Petri net ({ocpn_id}): {len(obj_types)} object types "
         f"({', '.join(obj_types)}), {total_places} places, {total_arcs} arcs\n"

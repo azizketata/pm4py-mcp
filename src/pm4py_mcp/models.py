@@ -93,6 +93,28 @@ class OcelExportResult:
 
 
 @dataclass(frozen=True)
+class OcelFilterResult:
+    """Returned by every ``filter_ocel_*`` tool.
+
+    Mirrors Phase 1's :class:`FilterResult` but reports both event AND object
+    counts, since OCEL filters can reduce either axis (or both). Filters are
+    pure — each call mints a fresh ``ocel_id`` so users can chain filters and
+    keep references to intermediate states.
+    """
+
+    new_ocel_id: str
+    source_ocel_id: str
+    filter: str
+    num_events_before: int
+    num_events_after: int
+    num_objects_before: int
+    num_objects_after: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class FilterResult:
     """Returned by every ``filter_*`` tool.
 

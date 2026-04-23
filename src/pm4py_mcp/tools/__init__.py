@@ -16,6 +16,7 @@ from pm4py_mcp.tools import (  # noqa: F401
     filters,
     io,
     ocel_discovery,
+    ocel_filters,
     ocel_io,
     ocel_visualization,
     stats,
