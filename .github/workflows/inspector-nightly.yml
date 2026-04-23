@@ -32,20 +32,40 @@ jobs:
         with:
           node-version: "20"
 
-      # Protocol-level check: tools/list must return the full Phase 1 + Phase 2 surface.
+      # Protocol-level check: tools/list must return the full Phase 1 + Phase 2 + Phase 3 surface.
       # Inspector CLI invocations are stateless — server spawns fresh each call —
       # so we can't chain log_id/ocel_id through multiple tools. These calls
       # exercise everything that doesn't need a prior handle.
-      - name: Inspector - list tools (expect 36)
+      - name: Inspector - list tools (expect 48)
         run: |
           output=$(npx --yes @modelcontextprotocol/inspector --cli uv run pm4py-mcp --method tools/list)
           echo "$output"
           count=$(echo "$output" | python -c "import json, sys; d=json.load(sys.stdin); print(len(d.get('tools', [])))")
           echo "tool count: $count"
-          if [ "$count" -ne 36 ]; then
-            echo "Expected 36 tools, got $count"
+          if [ "$count" -ne 48 ]; then
+            echo "Expected 48 tools, got $count"
             exit 1
           fi
+
+      - name: Inspector - list prompts (expect 6)
+        run: |
+          output=$(npx --yes @modelcontextprotocol/inspector --cli uv run pm4py-mcp --method prompts/list)
+          echo "$output"
+          count=$(echo "$output" | python -c "import json, sys; d=json.load(sys.stdin); print(len(d.get('prompts', [])))")
+          echo "prompt count: $count"
+          if [ "$count" -ne 6 ]; then
+            echo "Expected 6 prompts, got $count"
+            exit 1
+          fi
+
+      - name: Inspector - get the new_log_onboarding prompt
+        run: >
+          npx --yes @modelcontextprotocol/inspector
+          --cli
+          uv run pm4py-mcp
+          --method prompts/get
+          --prompt-name new_log_onboarding
+          --prompt-args log_path=examples/running-example.xes
 
       - name: Inspector - call ping
         run: >

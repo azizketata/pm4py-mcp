@@ -21,6 +21,7 @@ from pm4py_mcp.tools import (  # noqa: F401
     ocel_filters,
     ocel_io,
     ocel_visualization,
+    reports,
     stats,
     visualization,
 )

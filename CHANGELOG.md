@@ -6,6 +6,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - TBD
+
+Phase 3 — **agentic layer.** 12 new tools + 6 prompts bring the total surface to **48 tools** plus a curated prompt library. The focus of this release is *LLM reasoning over PM artifacts*: previously Claude could render a Petri net (a PNG) but couldn't reason about its structure; now every major artifact has a textual abstraction the LLM reads directly.
+
+### Added
+
+**Textual abstractions (9 tools)** — wrap `pm4py.algo.querying.llm.abstractions.*_to_descr`. Every abstraction returns a uniform `{content, approx_tokens, truncated, source_handle, tool}` dict so the LLM can decide when to re-request with a tighter `max_len`.
+- `abstract_log_features(log_id, max_len=10_000)` — log-level feature description (concurrency, skeleton, timing signal).
+- `abstract_log_attributes(log_id, max_len=10_000)` — case/event attribute distributions in text.
+- `abstract_variants(log_id, max_len=10_000, include_performance=True)` — ranked variants with durations (pm4py internally computes; no top_k param — truncation-driven).
+- `abstract_dfg(log_id, max_len=10_000, include_performance=True)` — directly-follows graph as prose with sojourn times. Takes `log_id` (not `dfg_id`) — pm4py recomputes the DFG internally.
+- `abstract_case(log_id, case_id, include_event_attributes=True)` — single-case walk-through. Raises `UnsupportedFormat` for unknown case IDs. No `max_len` knob (pm4py's `case_to_descr` doesn't expose one).
+- `abstract_stream(log_id, max_len=10_000)` — tail of events in reverse-chronological order. Useful for "what happened most recently?" questions.
+- `abstract_petri_net(petri_id)` — structural description of places/transitions/markings. No `max_len` knob; `truncated` is always `False`.
+- `abstract_ocel(ocel_id, object_type, max_len=10_000)` — per-object-type event description. Validates `object_type` against the OCEL.
+- `abstract_ocdfg(ocel_id, max_len=10_000, include_performance=True)` — object-centric DFG in prose. Takes `ocel_id` directly (pm4py recomputes).
+
+**Domain context (2 tools)**
+- `set_domain_context(text_or_path, name="default")` — register an SOP / glossary / process description under a name. Accepts inline text OR a file path (auto-detected). Capped at 20 KB per context and 16 named contexts total. Contexts survive across tool calls in the same server process.
+- `get_domain_context(name="default")` — retrieve stored context for inspection. Raises `ContextNotFound` if unknown.
+
+Registered contexts are automatically prepended to every prompt template's body, so `@mcp.prompt` expansions respect user-supplied domain knowledge without the user having to re-paste it each time.
+
+**Reports (1 tool)**
+- `render_report(title, findings, artifact_paths=None, output_path=None)` — assemble a Markdown report with ISO-8601 timestamp, the LLM-authored findings, an Artifacts section (images embedded inline, other files as links), and a pm4py-mcp version footer. Bare filenames land in the workspace; absolute paths are honored as-is.
+
+**Prompt library (6 prompts via `@mcp.prompt`)** — user-invoked slash commands that seed canonical PM investigations.
+- `new_log_onboarding(log_path)` — 2-minute first-impression summary.
+- `conformance_workflow(log_path, noise_threshold=0.2)` — load + discover + token replay + alignments + compare.
+- `bottleneck_analysis(log_path)` — find slowest variants and bottleneck DFG edges.
+- `variant_exploration(log_path, k=5)` — top-k variants + drill into the dominant one.
+- `ocel_flattening_workflow(ocel_path)` — compare object-type perspectives of an OCEL.
+- `executive_summary(log_id_or_path, title)` — consolidate findings via `render_report`.
+
+**Infrastructure**
+- `src/pm4py_mcp/_tokens.py` — char÷4 token-count heuristic in its own module. Easy swap-in for a real tokenizer later.
+- `AbstractionResult` dataclass in `models.py` with `.build()` classmethod that computes `approx_tokens` + `truncated` from content length.
+- `scripts/download_benchmark_logs.py` — pulls Sepsis (198 KB), BPI 2012, BPI 2017 from 4TU.ResearchData with MD5 verification. Logs land in `examples/benchmarks/` (gitignored).
+- End-to-end Phase 3 stdio workflow test in [tests/test_workflow_phase3_stdio.py](tests/test_workflow_phase3_stdio.py): load → abstract_variants → abstract_dfg → discover_petri_net → abstract_petri_net → set/get domain context → render_report with embedded narrative.
+
+### Design note — abstract-then-prompt paradigm
+
+Phase 1 and Phase 2 grew the *verb* surface. Phase 3 grows the *reasoning* surface. A user asking "where's the bottleneck?" in 0.2.0 got a PNG Claude couldn't read; in 0.3.0 the same prompt triggers `/bottleneck_analysis`, which runs `abstract_dfg(include_performance=True)` + `abstract_variants(include_performance=True)` and hands Claude the numbers directly. This is Berti's framework: *abstract the artifact into text, then prompt the LLM on the text.*
+
+### Deferred (explicit)
+
+- `run_duckdb_sql(log_id, sql)` — requires adding the `duckdb` dep. Slotted for 0.3.1.
+- `semantic_anomaly_detect(log_id)` — needs `ctx.session.create_message`, which is only available in `ServerTaskContext` (via `@server.task()`), not regular `@server.tool()`. Meaningful re-architecture; target 0.3.1 or 0.4.0.
+- `abstract_declare`, `abstract_log_skeleton`, `abstract_temporal_profile` — will land with Phase 2 Part 2 (0.4.0) when their corresponding discovery tools exist.
+
+### Requires
+
+- Same runtime deps as 0.2.0. No new packages — the abstractions use `pm4py.algo.querying.llm.abstractions.*` modules already shipped with pm4py 2.7+.
+- No Graphviz change from 0.2.0.
+
 ## [0.2.0] - TBD
 
 Phase 2 Part 1 — **OCEL 2.0 support.** 12 new tools bring the total surface to **36 tools**. This is the decisive differentiator: no commercial MCP supports OCEL 2.0 (object-centric event logs). Phase 2 Part 2 (advanced discovery — DECLARE, POWL, log skeleton, organizational mining, conversions, simulation, advanced viz) defers to a separate 0.3.0 plan.
@@ -144,7 +199,8 @@ First PyPI release claiming the `pm4py-mcp` name. No user-facing functionality b
 - CI matrix: Python 3.10–3.13 × Ubuntu / macOS / Windows.
 - PyPI Trusted Publishing workflow: TestPyPI for pre-release tags, PyPI for release tags.
 
-[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.1.0
 [0.0.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.0.1

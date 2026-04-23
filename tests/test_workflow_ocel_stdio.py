@@ -52,9 +52,9 @@ async def test_ocel_workflow_through_stdio() -> None:
             assert init.serverInfo.name == "pm4py-mcp"
 
             tools = await session.list_tools()
-            # 24 Phase 1 + 12 Phase 2 + 9 Phase 3 abstractions (Slices 1+2)
-            # + 2 Slice 3 context tools = 47
-            assert len(tools.tools) == 47
+            # 24 Phase 1 + 12 Phase 2 + 9 Phase 3 abstractions
+            # + 2 context + 1 render_report = 48
+            assert len(tools.tools) == 48
 
             # 1. Load the bundled OCEL.
             r = await session.call_tool("load_ocel", {"path": str(EXAMPLE_OCEL)})

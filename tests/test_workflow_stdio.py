@@ -53,10 +53,10 @@ async def test_full_phase1_workflow_over_stdio() -> None:
             init = await session.initialize()
             assert init.serverInfo.name == "pm4py-mcp"
 
-            # Phase 1 (24) + Phase 2 OCEL (12) + Phase 3 Slices 1+2 abstractions (9)
-            # + Slice 3 context tools (2) = 47 tools total.
+            # Phase 1 (24) + Phase 2 OCEL (12) + Phase 3 abstractions (9)
+            # + Slice 3 context tools (2) + Slice 4 render_report (1) = 48.
             tools = await session.list_tools()
-            assert len(tools.tools) == 47
+            assert len(tools.tools) == 48
 
             # 1. Load
             r = await session.call_tool("load_event_log", {"path": str(EXAMPLE_XES)})
