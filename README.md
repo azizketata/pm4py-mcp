@@ -4,6 +4,10 @@ An AGPL-licensed, stdio-first **Model Context Protocol** server that wraps [PM4P
 
 > **Status:** Phase 1 complete — `pm4py-mcp 0.1.0` ships 24 workflow-shaped tools spanning I/O, discovery, conformance, filtering, statistics, and visualization. Installable via `uvx pm4py-mcp`.
 
+**Today** — load XES / CSV / Parquet logs, discover Petri nets / process trees / BPMN / DFGs, run token-replay or alignment conformance, filter chains that mint fresh handles, and render every model inline as PNG + SVG. 24 natural-language tools, fully local, nothing leaves your machine.
+
+**Next** — OCEL 2.0 object-centric namespace, advanced discovery (DECLARE, POWL, log skeleton, organizational mining), LLM-aware textual abstractions, and a curated prompt library for canonical PM investigations. Team deployment via Streamable HTTP lands in Phase 4.
+
 ## Why
 
 No open-source MCP server for process mining exists today. Celonis, SAP Signavio, and Microsoft Power Automate Process Mining all ship closed, SaaS-bound equivalents. `pm4py-mcp` fills the open, local, Python-native quadrant: event logs never leave the machine, algorithms are research-grade (Inductive Miner variants, alignments, POWL, OCEL 2.0), and the server composes cleanly into LangGraph / CrewAI / AutoGen crews.
@@ -35,13 +39,21 @@ MCP users configure servers via JSON, not via `pip install`. Add this to `claude
 
 Quit Claude Desktop from the system tray (not just close the window) and relaunch. The server auto-downloads on first use.
 
+Once the MCP client picks up the config, `pm4py` shows up as a connected server:
+
+![pm4py connected in the MCP servers panel](docs/images/mcp-connected.png)
+
 ## Walking example
 
 With the server configured, start a new Claude chat and try:
 
 > "Load the log at `<path>/examples/running-example.xes`. Describe it. Discover a Petri net with 0.2 noise threshold. Check conformance with token replay. Show me the diagram."
 
-Claude will chain `load_event_log` → `describe_log` → `discover_petri_net` → `conformance_token_replay` → `visualize_petri_net`, returning an inline Petri-net PNG plus the fitness number and absolute file paths for the PNG + SVG. The [bundled example log](examples/running-example.xes) is an 8-case hospital-admission process with two variants.
+Claude will chain `load_event_log` → `describe_log` → `discover_petri_net` → `conformance_token_replay` → `visualize_petri_net`, returning an inline Petri-net PNG plus the fitness number and absolute file paths for the PNG + SVG. The [bundled example log](examples/running-example.xes) is an 8-case hospital-admission process with two variants:
+
+![Discovered Petri net: register -> triage -> (consult | treat) -> discharge](docs/images/petri-net-example.png)
+
+The PNG above is the actual `visualize_petri_net` output for the bundled example log, rendered by PM4Py's Graphviz backend and saved to the workspace at `~/.pm4py-mcp/workspace/`. Token-replay conformance against this model returns `mean_trace_fitness = 1.0` (8/8 fit cases).
 
 ## Tool catalog (Phase 1 — 24 tools)
 

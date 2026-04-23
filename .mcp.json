@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pm4py": {
+      "command": "uvx",
+      "args": ["pm4py-mcp@latest"]
+    }
+  }
+}

@@ -97,3 +97,6 @@ workspace/
 *.key
 *.pem
 .envrc
+
+# Local AI assistant context — not published
+CLAUDE.md
