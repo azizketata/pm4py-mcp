@@ -1,0 +1,24 @@
+# Normalize line endings across Windows / macOS / Linux contributors
+* text=auto eol=lf
+
+# Source and config — always LF (shebangs, entry points)
+*.py        text eol=lf
+*.toml      text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.md        text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+Makefile    text eol=lf
+
+# Windows-native files, if any land later
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# Binary assets — never touch
+*.png       binary
+*.jpg       binary
+*.pdf       binary
+*.xes.gz    binary
+*.sqlite    binary

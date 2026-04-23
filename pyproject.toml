@@ -1,0 +1,128 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pm4py-mcp"
+dynamic = ["version"]
+description = "Open-source Model Context Protocol server for process mining, wrapping PM4Py behind a small handle-based tool surface."
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Mohamed Aziz Ketata", email = "mohamed.aziz.ketata@gmail.com" },
+]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "process-mining",
+    "pm4py",
+    "claude",
+    "agents",
+    "xes",
+    "ocel",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "mcp>=1.20,<2",
+    "pm4py>=2.7,<3",
+]
+
+[project.optional-dependencies]
+ocel = ["pyarrow>=15"]
+llm = ["openai>=1.30"]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-timeout>=2.3",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+    "build>=1.2",
+]
+
+[project.scripts]
+pm4py-mcp = "pm4py_mcp.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/azizketata/pm4py-mcp"
+Repository = "https://github.com/azizketata/pm4py-mcp"
+Issues = "https://github.com/azizketata/pm4py-mcp/issues"
+Changelog = "https://github.com/azizketata/pm4py-mcp/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/pm4py_mcp/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pm4py_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/pm4py_mcp",
+    "tests",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "pyproject.toml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # flake8-bugbear
+    "UP",       # pyupgrade
+    "SIM",      # flake8-simplify
+    "RUF",      # ruff-specific
+]
+ignore = ["E501"]  # handled by ruff format
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unreachable = true
+show_error_codes = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["pm4py.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "in_process: in-process ClientSession tests (layer 2)",
+    "subprocess: stdio subprocess tests (layer 3)",
+]
+timeout = 30
