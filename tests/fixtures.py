@@ -14,21 +14,28 @@ import pm4py
 
 
 def tiny_log() -> pd.DataFrame:
-    """Return a 3-case, 10-event synthetic log, pm4py-formatted.
+    """Return a 3-case, 11-event synthetic log, pm4py-formatted.
 
     Structure:
       - 3 cases
       - 4 unique activities: register, triage, treat, discharge
-      - 2 variants: (register, triage, treat, discharge) x2; (register, triage, discharge) x1
+      - 2 variants:
+          (register, triage, treat, discharge) x2   — cases 1, 2 (happy path)
+          (register, triage, treat)              x1 — case 3 (ends before discharge)
+      - end activities: discharge x2, treat x1
     """
     rows = [
+        # case-1: happy path
         ("case-1", "register", "2024-01-01T08:00:00"),
         ("case-1", "triage", "2024-01-01T08:15:00"),
         ("case-1", "treat", "2024-01-01T09:00:00"),
         ("case-1", "discharge", "2024-01-01T11:30:00"),
+        # case-2: happy path (same variant as case-1)
         ("case-2", "register", "2024-01-01T09:00:00"),
         ("case-2", "triage", "2024-01-01T09:20:00"),
-        ("case-2", "discharge", "2024-01-01T09:45:00"),
+        ("case-2", "treat", "2024-01-01T10:30:00"),
+        ("case-2", "discharge", "2024-01-01T13:00:00"),
+        # case-3: stops at treat — different end activity
         ("case-3", "register", "2024-01-01T10:00:00"),
         ("case-3", "triage", "2024-01-01T10:10:00"),
         ("case-3", "treat", "2024-01-01T11:00:00"),
