@@ -9,7 +9,7 @@ jobs:
   inspector:
     name: MCP Inspector CLI smoke test
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -21,6 +21,9 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+
       - name: Install package
         run: uv sync --extra dev
 
@@ -29,12 +32,20 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Inspector - list tools
-        run: >
-          npx --yes @modelcontextprotocol/inspector
-          --cli
-          uv run pm4py-mcp
-          --method tools/list
+      # Protocol-level check: tools/list must return the full Phase 1 surface.
+      # Inspector CLI invocations are stateless — server spawns fresh each call —
+      # so we can't chain log_id through multiple tools. These three calls
+      # exercise everything that doesn't need a prior handle.
+      - name: Inspector - list tools (expect 24)
+        run: |
+          output=$(npx --yes @modelcontextprotocol/inspector --cli uv run pm4py-mcp --method tools/list)
+          echo "$output"
+          count=$(echo "$output" | python -c "import json, sys; d=json.load(sys.stdin); print(len(d.get('tools', [])))")
+          echo "tool count: $count"
+          if [ "$count" -ne 24 ]; then
+            echo "Expected 24 tools, got $count"
+            exit 1
+          fi
 
       - name: Inspector - call ping
         run: >
@@ -43,6 +54,15 @@ jobs:
           uv run pm4py-mcp
           --method tools/call
           --tool-name ping
+
+      - name: Inspector - load example log
+        run: >
+          npx --yes @modelcontextprotocol/inspector
+          --cli
+          uv run pm4py-mcp
+          --method tools/call
+          --tool-name load_event_log
+          --tool-arg path=examples/running-example.xes
 
       - name: Open issue on failure
         if: failure()
