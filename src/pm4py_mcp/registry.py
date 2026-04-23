@@ -23,7 +23,7 @@ from typing import Any, Literal
 
 from pm4py_mcp.errors import HandleNotFound, InvalidKind
 
-Kind = Literal["log", "petri_net", "process_tree", "bpmn", "dfg", "ocel"]
+Kind = Literal["log", "petri_net", "process_tree", "bpmn", "dfg", "ocel", "ocdfg", "ocpn"]
 
 _PREFIX: dict[Kind, str] = {
     "log": "log",
@@ -32,6 +32,8 @@ _PREFIX: dict[Kind, str] = {
     "bpmn": "bpmn",
     "dfg": "dfg",
     "ocel": "ocel",
+    "ocdfg": "ocdfg",
+    "ocpn": "ocpn",
 }
 
 
