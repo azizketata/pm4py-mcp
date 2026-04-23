@@ -38,7 +38,8 @@ async def test_list_tools_contains_phase_1_surface() -> None:
     async with create_connected_server_and_client_session(mcp._mcp_server) as client:
         tools = await client.list_tools()
         names = {t.name for t in tools.tools}
-        # ping + I/O (4) + stats (4) + discovery (4) + visualization (4) = 17
+        # ping + I/O (4) + stats (4) + discovery (4) + visualization (4)
+        # + filters (5) + conformance (2) = 24
         assert "ping" in names
         for t in (
             "load_event_log",
@@ -57,6 +58,13 @@ async def test_list_tools_contains_phase_1_surface() -> None:
             "visualize_petri_net",
             "visualize_process_tree",
             "visualize_bpmn",
+            "filter_variants",
+            "filter_time_range",
+            "filter_attribute_values",
+            "filter_case_size",
+            "filter_case_performance",
+            "conformance_token_replay",
+            "conformance_alignments",
         ):
             assert t in names, f"{t} missing from tools/list"
 
@@ -176,3 +184,75 @@ async def test_visualize_petri_net_via_mcp_returns_caption_and_image() -> None:
         assert "PNG:" in getattr(first, "text", "")
         assert getattr(second, "type", None) == "image"
         assert getattr(second, "mimeType", None) == "image/png"
+
+
+async def test_filter_chain_via_mcp() -> None:
+    """Filter a log twice — verify each call mints a new handle and preserves lineage."""
+    log_id = registry.put("log", tiny_log())
+    async with create_connected_server_and_client_session(mcp._mcp_server) as client:
+        r1 = _unwrap(
+            (
+                await client.call_tool(
+                    "filter_case_size",
+                    {"log_id": log_id, "min_size": 4, "max_size": 4},
+                )
+            ).content
+        )
+        assert r1["num_cases_after"] == 2
+        assert r1["source_log_id"] == log_id
+        assert r1["new_log_id"] != log_id
+
+        r2 = _unwrap(
+            (
+                await client.call_tool(
+                    "filter_variants",
+                    {"log_id": r1["new_log_id"], "top_k": 1, "retain": True},
+                )
+            ).content
+        )
+        assert r2["num_cases_after"] == 2
+        assert r2["source_log_id"] == r1["new_log_id"]
+
+
+async def test_conformance_token_replay_via_mcp() -> None:
+    log_id = registry.put("log", tiny_log())
+    async with create_connected_server_and_client_session(mcp._mcp_server) as client:
+        petri = _unwrap((await client.call_tool("discover_petri_net", {"log_id": log_id})).content)
+        result = _unwrap(
+            (
+                await client.call_tool(
+                    "conformance_token_replay",
+                    {"log_id": log_id, "petri_id": petri["petri_id"]},
+                )
+            ).content
+        )
+        assert result["algorithm"] == "token_replay"
+        assert result["num_cases"] == 3
+        assert result["mean_trace_fitness"] >= 0.95
+
+
+async def test_conformance_alignments_via_mcp() -> None:
+    log_id = registry.put("log", tiny_log())
+    async with create_connected_server_and_client_session(mcp._mcp_server) as client:
+        petri = _unwrap((await client.call_tool("discover_petri_net", {"log_id": log_id})).content)
+        result = _unwrap(
+            (
+                await client.call_tool(
+                    "conformance_alignments",
+                    {"log_id": log_id, "petri_id": petri["petri_id"]},
+                )
+            ).content
+        )
+        assert result["algorithm"] == "alignments"
+        assert result["num_cases"] == 3
+        assert result["mean_trace_fitness"] == pytest.approx(1.0, abs=1e-6)
+
+
+async def test_conformance_token_replay_wrong_kind_is_tool_error() -> None:
+    log_id = registry.put("log", tiny_log())
+    async with create_connected_server_and_client_session(mcp._mcp_server) as client:
+        result = await client.call_tool(
+            "conformance_token_replay",
+            {"log_id": log_id, "petri_id": log_id},  # both logs — wrong kind for second
+        )
+        assert result.isError is True

@@ -56,3 +56,42 @@ class WorkspaceEntry:
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class FilterResult:
+    """Returned by every ``filter_*`` tool.
+
+    Filters never mutate the source log — each call mints a fresh handle
+    so the user can keep references to intermediate states.
+    """
+
+    new_log_id: str
+    source_log_id: str
+    filter: str
+    num_cases_before: int
+    num_cases_after: int
+    num_events_before: int
+    num_events_after: int
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ConformanceResult:
+    """Returned by ``conformance_token_replay`` and ``conformance_alignments``.
+
+    Only aggregate stats — never the per-trace list, which can be 100k+ rows
+    on a real log and blow Claude Desktop's 1 MB response cap.
+    """
+
+    log_id: str
+    petri_id: str
+    algorithm: str  # "token_replay" | "alignments"
+    num_cases: int
+    num_fit_cases: int
+    mean_trace_fitness: float  # 0.0 .. 1.0
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
