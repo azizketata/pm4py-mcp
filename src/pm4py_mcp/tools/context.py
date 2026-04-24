@@ -35,12 +35,18 @@ class ContextNotFound(Pm4pyMcpError):
 
 def _resolve_text_or_path(text_or_path: str) -> tuple[str, str]:
     """Return (content, source_label). Treat the argument as a file path only
-    if it resolves to an existing readable file; otherwise treat as inline text."""
+    if it resolves to an existing readable file; otherwise treat as inline text.
+
+    ``Path.is_file()`` calls ``os.stat`` which raises ``OSError(ENAMETOOLONG)``
+    on POSIX when the input exceeds ``NAME_MAX`` (255 bytes on Linux); Windows
+    silently returns False. A long SOP paste is never a file — bail to inline.
+    """
     try:
         p = Path(text_or_path).expanduser()
+        is_file = p.is_file()
     except (OSError, ValueError):
         return text_or_path, "inline text"
-    if p.is_file():
+    if is_file:
         try:
             return p.read_text(encoding="utf-8"), f"file: {p}"
         except OSError as exc:
