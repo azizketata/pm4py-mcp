@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.1] - TBD
+
+Patch release driven by same-day dogfooding of `pm4py-mcp 0.3.0` on the Sepsis benchmark. 0.3.0's prompt templates got the user 80 % of the way but three UX failures surfaced on the first real run. 0.3.1 closes them. No tool surface changes; no breaking changes.
+
+### Added
+
+- **`PM4PY_MCP_CWD_HINT` environment variable.** When `load_event_log` / `load_ocel` receives a relative path that doesn't resolve against the server's CWD, the resolver now falls back to joining the path against `$PM4PY_MCP_CWD_HINT` if it's set. Users configure it once in their MCP server block (`env: { "PM4PY_MCP_CWD_HINT": "${workspaceFolder}" }`) and relative paths just work. Absolute paths are never overridden.
+- **Descriptive `FileNotFoundError` messages.** When path resolution still fails, the error now names the input path, the server's CWD, whether `PM4PY_MCP_CWD_HINT` was set, and how to retry — so Claude can act on the error instead of stalling.
+- **`get_case_durations` in the `/new_log_onboarding` chain.** Median / p90 / p95 / p99 duration percentiles are the cheapest, highest-signal anomaly indicator on a real log. 0.3.0's onboarding narrative missed the Sepsis long tail (median 5.3 days, p90 = 93 days); 0.3.1's doesn't.
+- **`get_variants(log_id, top_k=10)` as the narrative variant step in `/new_log_onboarding`.** `abstract_variants` (which returned ~10 KB of fat-middle prose on Sepsis while the top 5 variants covered <10 % of cases) is demoted to an **optional drill-in** step with a tight `max_len=3000` — invoked only when step 4 surfaces a long variant worth explaining.
+- **Shared "Path tip" footer across all 6 prompt templates.** Every `@mcp.prompt` body now ends with remediation guidance so Claude knows how to recover when relative paths fail — without requiring the server to be restarted. Implementation: one helper in `src/pm4py_mcp/prompts/_shared.py::path_tip_footer`; one-line concatenation per prompt.
+
+### Fixed
+
+- **POSIX `OSError(ENAMETOOLONG)` in `set_domain_context` with long SOP payloads.** On Linux/macOS, `Path.is_file()` calls `os.stat()` which raises `OSError(ENAMETOOLONG)` when the "path" string exceeds `NAME_MAX` (255 bytes). 0.3.0's `_resolve_text_or_path` caught errors around `Path()` construction but not around `is_file()`, so passing a 10-20 KB inline text context crashed the tool on POSIX while working on Windows. CI was red on every Linux + macOS cell between the Slice 1 commit and now; local tests passed because the developer was on Windows. Fix: wrap `is_file()` in the same try/except block. (commit `c33117f`, already on `main` but not on any PyPI release before 0.3.1.)
+
+### Infrastructure
+
+- New shared helper `src/pm4py_mcp/_paths.py::resolve_input_path` (parallel to `_time.py` / `_tokens.py`). Single source of truth for user-supplied input paths; reused by `load_event_log` and `load_ocel`.
+- `scripts/smoke_test_wheel.py` now reads the expected version string from `importlib.metadata.version("pm4py-mcp")` instead of hardcoding it. Future releases won't need a smoke-test edit.
+- New test module `tests/test_paths.py` (7 cases covering absolute/relative/hint/tilde combinations). Extended `tests/test_tools_io.py` + `tests/test_tools_ocel_io.py` to assert the new error message shape. Extended `tests/test_prompts_mcp.py` with a parametrized test that every prompt body includes the `PM4PY_MCP_CWD_HINT` footer.
+
+### Known limitations
+
+- **`render_report` and `export_log` honor their `path` arg verbatim** when it has a directory component (same 0.2.0 / 0.3.0 behavior). The `PM4PY_MCP_CWD_HINT` fallback applies to *input* paths (`load_event_log`, `load_ocel`) only in 0.3.1. Output-path consistency is planned for 0.3.2 using the same helper.
+- **`abstract_variants` fat-middle problem is not fully solved.** 0.3.1 sidesteps it by not calling `abstract_variants` as the primary variant tool in `/new_log_onboarding`; the function itself still returns up to `max_len` chars of all ranked variants. A server-side "top-N-only" mode is deferred to 0.4.0 (requires changes to how pm4py's underlying `log_to_variants_descr` is invoked).
+
 ## [0.3.0] - TBD
 
 Phase 3 — **agentic layer.** 12 new tools + 6 prompts bring the total surface to **48 tools** plus a curated prompt library. The focus of this release is *LLM reasoning over PM artifacts*: previously Claude could render a Petri net (a PNG) but couldn't reason about its structure; now every major artifact has a textual abstraction the LLM reads directly.
@@ -199,7 +226,8 @@ First PyPI release claiming the `pm4py-mcp` name. No user-facing functionality b
 - CI matrix: Python 3.10–3.13 × Ubuntu / macOS / Windows.
 - PyPI Trusted Publishing workflow: TestPyPI for pre-release tags, PyPI for release tags.
 
-[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.1.0

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp.prompts.base import UserMessage
 
-from pm4py_mcp.prompts._shared import maybe_prepend_context
+from pm4py_mcp.prompts._shared import maybe_prepend_context, path_tip_footer
 from pm4py_mcp.server import mcp
 
 
@@ -35,4 +35,4 @@ Then write a conformance report:
 - How many of N cases fit perfectly?
 - Name the specific variants that most likely contribute to deviations.
 - Is `noise_threshold={noise_threshold}` appropriate for this log, or should we tighten/loosen it?"""
-    return [UserMessage(preamble + body)]
+    return [UserMessage(preamble + body + path_tip_footer(log_path))]

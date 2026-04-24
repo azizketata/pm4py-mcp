@@ -2,7 +2,7 @@
 
 An AGPL-licensed, stdio-first **Model Context Protocol** server that wraps [PM4Py](https://github.com/process-intelligence-solutions/pm4py) behind a small handle-based tool surface — making research-grade process mining available to Claude and any MCP-capable agent, locally and on open standards (XES, **OCEL 2.0**, BPMN, PNML).
 
-> **Status:** Phase 3 shipped — `pm4py-mcp 0.3.0` ships **48 workflow-shaped tools + 6 curated prompts** spanning I/O, discovery, conformance, filtering, statistics, visualization, OCEL 2.0 object-centric process mining, **textual abstractions** the LLM can reason over, **domain-context injection**, and **Markdown report rendering**. Installable via `uvx pm4py-mcp`.
+> **Status:** Phase 3 shipped — `pm4py-mcp 0.3.1` ships **48 workflow-shaped tools + 6 curated prompts** spanning I/O, discovery, conformance, filtering, statistics, visualization, OCEL 2.0 object-centric process mining, **textual abstractions** the LLM can reason over, **domain-context injection**, and **Markdown report rendering**. Installable via `uvx pm4py-mcp`. (0.3.1 adds the `PM4PY_MCP_CWD_HINT` env var for relative-path resolution + prompt-template polish driven by Sepsis dogfooding.)
 
 **Today** — load XES / CSV / Parquet logs or OCEL 2.0 (JSON / XML / SQLite), discover Petri nets / process trees / BPMN / DFGs / object-centric Petri nets / OC-DFGs, run token-replay or alignment conformance, filter chains, render dual-channel PNG + SVG — and now **turn every artifact into a textual abstraction the LLM can read directly**, **register domain SOPs that prompts respect across the session**, and **render a final Markdown report from accumulated findings**. 48 natural-language tools + 6 slash-command prompts, fully local, nothing leaves your machine.
 
@@ -32,7 +32,13 @@ MCP users configure servers via JSON, not via `pip install`. Add this to `claude
   "mcpServers": {
     "pm4py": {
       "command": "uvx",
-      "args": ["pm4py-mcp@latest"]
+      "args": ["pm4py-mcp@latest"],
+      "env": {
+        // Optional but strongly recommended — resolves relative paths (e.g.
+        // "examples/benchmarks/sepsis.xes.gz") against your project root when the
+        // server's own CWD isn't under it. Works in Claude Code / Desktop / most IDEs.
+        "PM4PY_MCP_CWD_HINT": "${workspaceFolder}"
+      }
     }
   }
 }

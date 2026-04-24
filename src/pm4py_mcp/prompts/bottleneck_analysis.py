@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp.prompts.base import UserMessage
 
-from pm4py_mcp.prompts._shared import maybe_prepend_context
+from pm4py_mcp.prompts._shared import maybe_prepend_context, path_tip_footer
 from pm4py_mcp.server import mcp
 
 
@@ -31,4 +31,4 @@ Then report:
 - **Top 3 bottleneck edges** (activity-pair transitions with the longest sojourn times).
 - **Hypothesis**: which specific handoff or activity most likely causes the slowdown?
 - **Next step**: propose a filter (e.g. `filter_case_performance`) that would isolate the slow cohort for deeper analysis with `abstract_case`."""
-    return [UserMessage(preamble + body)]
+    return [UserMessage(preamble + body + path_tip_footer(log_path))]

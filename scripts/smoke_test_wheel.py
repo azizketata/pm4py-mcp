@@ -1,22 +1,26 @@
 """Smoke-test the locally-built wheel end-to-end over stdio.
 
-Simulates what `uvx --from pm4py-mcp==0.3.0 pm4py-mcp` does after a real
+Simulates what `uvx --from pm4py-mcp==<version> pm4py-mcp` does after a real
 TestPyPI release: install the wheel into a fresh environment, spawn the
 `pm4py-mcp` entry point, and verify via the MCP protocol that the
-artifact exposes the expected surface (48 tools + 6 prompts in 0.3.0).
+artifact exposes the expected surface (48 tools + 6 prompts since 0.3.0).
+
+The expected version string is read from `importlib.metadata` at runtime
+so the script does not need to be edited per release.
 
 Run via:
 
     uv run --isolated --no-project \
-        --with dist/pm4py_mcp-0.3.0-py3-none-any.whl \
+        --with dist/pm4py_mcp-<version>-py3-none-any.whl \
+        --with "mcp>=1.20,<2" \
         python scripts/smoke_test_wheel.py
 """
 
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
+from importlib.metadata import version
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -45,6 +49,10 @@ EXPECTED_CORE_TOOLS = (
 
 
 async def main() -> int:
+    expected_version = version("pm4py-mcp")
+    expected_ping = f"pong pm4py-mcp {expected_version}"
+    print(f"expecting: {expected_ping}")
+
     params = StdioServerParameters(command="pm4py-mcp", args=[])
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
@@ -70,7 +78,7 @@ async def main() -> int:
             ping = await session.call_tool("ping", {})
             ping_text = getattr(ping.content[0], "text", "")
             print(f"ping: {ping_text}")
-            assert "pong pm4py-mcp 0.3.0" in ping_text, f"version mismatch: {ping_text}"
+            assert expected_ping in ping_text, f"version mismatch: {ping_text}"
 
             got = await session.get_prompt("new_log_onboarding", {"log_path": "demo.xes"})
             msg_text = getattr(got.messages[0].content, "text", "")

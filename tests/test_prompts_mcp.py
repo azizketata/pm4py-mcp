@@ -57,11 +57,16 @@ async def test_new_log_onboarding_body_mentions_core_tools() -> None:
         for tool in (
             "load_event_log",
             "describe_log",
+            "get_case_durations",
+            "get_variants",
             "abstract_log_features",
             "abstract_log_attributes",
             "abstract_variants",
         ):
             assert tool in text
+        assert "top_k=10" in text
+        # path-tip footer (0.3.1)
+        assert "PM4PY_MCP_CWD_HINT" in text
 
 
 async def test_conformance_workflow_body_mentions_replay_and_alignments() -> None:
@@ -154,3 +159,23 @@ async def test_prompts_get_unknown_name_is_error() -> None:
     async with create_connected_server_and_client_session(mcp._mcp_server) as client:
         with pytest.raises(Exception):
             await client.get_prompt("nonexistent_prompt_name", {"log_path": "x"})
+
+
+@pytest.mark.parametrize(
+    "name,args",
+    [
+        ("new_log_onboarding", {"log_path": "rel.xes"}),
+        ("bottleneck_analysis", {"log_path": "rel.xes"}),
+        ("conformance_workflow", {"log_path": "rel.xes"}),
+        ("variant_exploration", {"log_path": "rel.xes", "k": "3"}),
+        ("ocel_flattening_workflow", {"ocel_path": "rel.jsonocel"}),
+        ("executive_summary", {"log_id_or_path": "rel.xes", "title": "X"}),
+    ],
+)
+async def test_all_prompts_include_path_tip(name: str, args: dict) -> None:  # type: ignore[type-arg]
+    """Every prompt body must explain the PM4PY_MCP_CWD_HINT remediation path."""
+    async with create_connected_server_and_client_session(mcp._mcp_server) as client:
+        got = await client.get_prompt(name, args)
+        text = _message_text(got.messages[0])
+        assert "PM4PY_MCP_CWD_HINT" in text, f"{name} missing path-tip footer"
+        assert "Path tip" in text, f"{name} missing Path tip header"

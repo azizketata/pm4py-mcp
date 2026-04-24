@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp.prompts.base import UserMessage
 
-from pm4py_mcp.prompts._shared import maybe_prepend_context
+from pm4py_mcp.prompts._shared import maybe_prepend_context, path_tip_footer
 from pm4py_mcp.server import mcp
 
 
@@ -33,4 +33,4 @@ Then report:
 - **Richness**: which object type has the most variants or the longest traces?
 - **Cross-type synchronization**: which activities appear in multiple type-views? They're the multi-object transitions in the OCPN.
 - **Recommendation**: which object type is the "primary analytic lens" for this process?"""
-    return [UserMessage(preamble + body)]
+    return [UserMessage(preamble + body + path_tip_footer(ocel_path, kind="OCEL"))]

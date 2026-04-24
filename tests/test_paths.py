@@ -30,9 +30,7 @@ def test_absolute_path_missing_raises_with_all_context(
     assert f"{ENV_HINT}: (not set)" in msg
 
 
-def test_relative_path_under_cwd_resolves(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_relative_path_under_cwd_resolves(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     f = tmp_path / "log.xes"
     f.write_text("x", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
@@ -40,9 +38,7 @@ def test_relative_path_under_cwd_resolves(
     assert out == f.resolve()
 
 
-def test_relative_path_falls_back_to_hint(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_relative_path_falls_back_to_hint(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Set up: real file lives under tmp_path/project, but CWD is elsewhere.
     project = tmp_path / "project"
     project.mkdir()
@@ -65,9 +61,7 @@ def test_relative_path_falls_back_to_hint(
     assert out == f.resolve()
 
 
-def test_tilde_expanduser_still_works(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_tilde_expanduser_still_works(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # Redirect HOME to tmp_path so ~/log.xes is a controlled file
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Windows
@@ -77,9 +71,7 @@ def test_tilde_expanduser_still_works(
     assert out == f.resolve()
 
 
-def test_absolute_path_never_uses_hint(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_absolute_path_never_uses_hint(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """An absolute path that doesn't exist should NOT fall back to the hint."""
     project = tmp_path / "project"
     project.mkdir()

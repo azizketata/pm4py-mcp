@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp.prompts.base import UserMessage
 
-from pm4py_mcp.prompts._shared import maybe_prepend_context
+from pm4py_mcp.prompts._shared import maybe_prepend_context, path_tip_footer
 from pm4py_mcp.server import mcp
 
 
@@ -31,4 +31,4 @@ Then report:
 - Total case coverage of the top {k}.
 - Whether the top variant looks like a **happy path** or shows signs of rework (loops, skipped steps).
 - Attach the Petri net of the dominant variant."""
-    return [UserMessage(preamble + body)]
+    return [UserMessage(preamble + body + path_tip_footer(log_path))]

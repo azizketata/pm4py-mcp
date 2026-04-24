@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp.prompts.base import UserMessage
 
-from pm4py_mcp.prompts._shared import maybe_prepend_context
+from pm4py_mcp.prompts._shared import maybe_prepend_context, path_tip_footer
 from pm4py_mcp.server import mcp
 
 
@@ -33,4 +33,4 @@ Then write a ≤300-word first-impression summary covering:
 - **Next step:** one concrete follow-up (conformance check, bottleneck analysis, or filter-and-zoom).
 
 Be concrete: cite activity names, case counts, and duration numbers drawn from the tool outputs — not generalities."""
-    return [UserMessage(preamble + body)]
+    return [UserMessage(preamble + body + path_tip_footer(log_path))]

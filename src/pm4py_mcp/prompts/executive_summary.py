@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp.prompts.base import UserMessage
 
-from pm4py_mcp.prompts._shared import maybe_prepend_context
+from pm4py_mcp.prompts._shared import maybe_prepend_context, path_tip_footer
 from pm4py_mcp.server import mcp
 
 
@@ -32,4 +32,6 @@ Rules for the narrative:
 - **Concrete**: cite numbers (case count, fitness, percentages).
 - **Actionable**: end with 2-3 recommended next steps.
 - Assume the reader is a non-technical executive."""
-    return [UserMessage(preamble + body)]
+    # executive_summary takes a polymorphic log_id_or_path; the footer is still useful
+    # when the argument is a path rather than a log-* handle.
+    return [UserMessage(preamble + body + path_tip_footer(log_id_or_path))]
