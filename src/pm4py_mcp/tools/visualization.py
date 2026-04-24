@@ -15,6 +15,8 @@ from typing import Any
 import pm4py
 from mcp.server.fastmcp import Image
 
+from pm4py_mcp._matplotlib import save_matplotlib_png
+from pm4py_mcp.errors import UnsupportedFormat
 from pm4py_mcp.server import mcp, registry
 from pm4py_mcp.viz import check_graphviz, save_dual_channel
 
@@ -140,9 +142,104 @@ def visualize_powl(powl_id: str) -> list[Any]:
     return _build_blocks(caption, result.png_path, result.inline_attached)
 
 
+# --- 0.4.1: matplotlib-backed advanced visualizations ---
+
+
+_DEFAULT_DOTTED_CHART_ATTRS: list[str] = ["concept:name", "time:timestamp"]
+
+
+@mcp.tool(structured_output=False)
+def visualize_dotted_chart(
+    log_id: str,
+    attributes: list[str] | None = None,
+) -> list[Any]:
+    """Render a dotted chart (matplotlib, PNG-only).
+
+    Dotted charts project events onto a time-vs-value scatter using the
+    provided ``attributes``. Default ``["concept:name", "time:timestamp"]``
+    plots activity versus event time — the most useful view on an unfamiliar
+    log. Pass other attribute names (e.g. ``["org:resource", "time:timestamp"]``)
+    to see resource timelines or any numeric/categorical column.
+
+    No Graphviz dependency — matplotlib is a pm4py runtime dep.
+    """
+    _, log = registry.get(log_id, expected_kind="log")
+    attrs = list(attributes) if attributes is not None else list(_DEFAULT_DOTTED_CHART_ATTRS)
+
+    # Validate every attribute is present to fail fast with a helpful message
+    # instead of letting pm4py surface a cryptic KeyError.
+    available = set(log.columns)
+    missing = [a for a in attrs if a not in available]
+    if missing:
+        raise UnsupportedFormat(
+            f"Dotted-chart attributes not found in log: {missing}. "
+            f"Available columns (first 20): {sorted(available)[:20]}."
+        )
+
+    def _save(path: str) -> None:
+        pm4py.save_vis_dotted_chart(log, path, attributes=attrs)
+
+    result = save_matplotlib_png(_save, stem="dotted-chart")
+    caption = (
+        f"Dotted chart ({log_id}), attributes={attrs}\n"
+        f"PNG: {result.png_path}"
+    )
+    blocks: list[Any] = [caption]
+    if result.inline_attached:
+        blocks.append(Image(path=result.png_path))
+    return blocks
+
+
+@mcp.tool(structured_output=False)
+def visualize_performance_spectrum(
+    log_id: str,
+    activities: list[str],
+) -> list[Any]:
+    """Render a performance spectrum (matplotlib, PNG-only).
+
+    Plots the duration of each case along an ordered activity list, revealing
+    bottleneck segments visually. ``activities`` is required — the chart is
+    only meaningful when the caller picks a subset of activities to track.
+    Typically the activities of interest from the dominant variant(s).
+
+    No Graphviz dependency — matplotlib is a pm4py runtime dep.
+    """
+    _, log = registry.get(log_id, expected_kind="log")
+    if not activities:
+        raise UnsupportedFormat(
+            "visualize_performance_spectrum requires a non-empty 'activities' list."
+        )
+
+    activity_col = log.get("concept:name")
+    if activity_col is None:
+        raise UnsupportedFormat("Log is missing 'concept:name' column.")
+    available = set(activity_col.unique().tolist())
+    missing = [a for a in activities if a not in available]
+    if missing:
+        raise UnsupportedFormat(
+            f"Activities not found in log: {missing}. "
+            f"Available activities (first 20): {sorted(available)[:20]}."
+        )
+
+    def _save(path: str) -> None:
+        pm4py.save_vis_performance_spectrum(log, activities, path)
+
+    result = save_matplotlib_png(_save, stem="perf-spectrum")
+    caption = (
+        f"Performance spectrum ({log_id}), activities={activities}\n"
+        f"PNG: {result.png_path}"
+    )
+    blocks: list[Any] = [caption]
+    if result.inline_attached:
+        blocks.append(Image(path=result.png_path))
+    return blocks
+
+
 __all__ = [
     "visualize_bpmn",
     "visualize_dfg",
+    "visualize_dotted_chart",
+    "visualize_performance_spectrum",
     "visualize_petri_net",
     "visualize_powl",
     "visualize_process_tree",

@@ -22,6 +22,7 @@ from pm4py_mcp.prompts import (  # noqa: F401
     executive_summary,
     new_log_onboarding,
     ocel_flattening_workflow,
+    organizational_analysis,
     variant_exploration,
 )
 

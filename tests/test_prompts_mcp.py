@@ -22,6 +22,7 @@ EXPECTED_PROMPTS = {
     "executive_summary",
     "new_log_onboarding",
     "ocel_flattening_workflow",
+    "organizational_analysis",
     "variant_exploration",
 }
 
@@ -119,6 +120,27 @@ async def test_ocel_flattening_workflow_body_mentions_ocel_tools() -> None:
             assert tool in text
 
 
+async def test_organizational_analysis_body_mentions_sna_tools() -> None:
+    """0.4.1's new prompt covers org mining end-to-end."""
+    async with create_connected_server_and_client_session(mcp._mcp_server) as client:
+        got = await client.get_prompt(
+            "organizational_analysis", {"log_path": "examples/benchmarks/sepsis.xes.gz"}
+        )
+        text = _message_text(got.messages[0])
+        assert "sepsis.xes.gz" in text
+        for tool in (
+            "load_event_log",
+            "describe_log",
+            "discover_handover_network",
+            "abstract_sna",
+            "discover_working_together_network",
+            "discover_organizational_roles",
+        ):
+            assert tool in text, f"{tool} missing from organizational_analysis body"
+        # Must call out the prerequisite
+        assert "org:resource" in text
+
+
 async def test_executive_summary_body_calls_render_report() -> None:
     async with create_connected_server_and_client_session(mcp._mcp_server) as client:
         got = await client.get_prompt(
@@ -166,6 +188,7 @@ async def test_prompts_get_unknown_name_is_error() -> None:
     [
         ("new_log_onboarding", {"log_path": "rel.xes"}),
         ("bottleneck_analysis", {"log_path": "rel.xes"}),
+        ("organizational_analysis", {"log_path": "rel.xes"}),
         ("conformance_workflow", {"log_path": "rel.xes"}),
         ("variant_exploration", {"log_path": "rel.xes", "k": "3"}),
         ("ocel_flattening_workflow", {"ocel_path": "rel.jsonocel"}),

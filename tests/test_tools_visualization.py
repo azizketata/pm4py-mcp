@@ -26,6 +26,8 @@ from pm4py_mcp.tools.discovery import (
 from pm4py_mcp.tools.visualization import (
     visualize_bpmn,
     visualize_dfg,
+    visualize_dotted_chart,
+    visualize_performance_spectrum,
     visualize_petri_net,
     visualize_process_tree,
 )
@@ -156,3 +158,61 @@ def _assert_render_blocks(blocks: list) -> None:  # type: ignore[type-arg]
     assert svg_path.exists()
     assert png_path.stat().st_size > 0
     assert svg_path.stat().st_size > 0
+
+
+# --- 0.4.1: matplotlib-backed viz (no Graphviz dependency) ---
+
+
+def test_visualize_dotted_chart_default_attrs(log_id: str) -> None:
+    """Dotted chart with default attributes runs without Graphviz."""
+    import os
+
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    blocks = visualize_dotted_chart(log_id)
+    assert isinstance(blocks, list)
+    caption = blocks[0]
+    assert "Dotted chart" in caption
+    png_line = next(line for line in caption.splitlines() if line.startswith("PNG:"))
+    png_path = Path(png_line.removeprefix("PNG: ").strip())
+    assert png_path.exists()
+    assert png_path.stat().st_size > 0
+
+
+def test_visualize_dotted_chart_rejects_unknown_attr(log_id: str) -> None:
+    from pm4py_mcp.errors import UnsupportedFormat
+
+    with pytest.raises(UnsupportedFormat, match="not found in log"):
+        visualize_dotted_chart(log_id, attributes=["nope:attr", "time:timestamp"])
+
+
+def test_visualize_dotted_chart_wrong_kind_raises() -> None:
+    h = registry.put("petri_net", object())
+    with pytest.raises(InvalidKind):
+        visualize_dotted_chart(h)
+
+
+def test_visualize_performance_spectrum_happy(log_id: str) -> None:
+    import os
+
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    # tiny_log activities: register, triage, treat, discharge
+    blocks = visualize_performance_spectrum(log_id, ["register", "triage", "treat"])
+    caption = blocks[0]
+    assert "Performance spectrum" in caption
+    png_line = next(line for line in caption.splitlines() if line.startswith("PNG:"))
+    png_path = Path(png_line.removeprefix("PNG: ").strip())
+    assert png_path.exists()
+
+
+def test_visualize_performance_spectrum_empty_activities_raises(log_id: str) -> None:
+    from pm4py_mcp.errors import UnsupportedFormat
+
+    with pytest.raises(UnsupportedFormat, match="non-empty"):
+        visualize_performance_spectrum(log_id, [])
+
+
+def test_visualize_performance_spectrum_unknown_activity_raises(log_id: str) -> None:
+    from pm4py_mcp.errors import UnsupportedFormat
+
+    with pytest.raises(UnsupportedFormat, match="Activities not found"):
+        visualize_performance_spectrum(log_id, ["NotAnActivity"])
