@@ -433,7 +433,8 @@ def test_abstract_sna_empty_network_graceful() -> None:
     """Zero-connection SNA objects still return a sensible string."""
 
     class _EmptySNA:
-        connections: dict = {}
+        def __init__(self) -> None:
+            self.connections: dict = {}
 
     sna_id = registry.put("sna", _EmptySNA())
     result = abstract_sna(sna_id)

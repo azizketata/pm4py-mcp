@@ -68,16 +68,18 @@ async def test_phase3_agentic_workflow_over_stdio(tmp_path: Path) -> None:
             ):
                 assert expected in tool_names, f"{expected} missing from tools/list"
 
-            # Prompt surface: 6 curated workflows
+            # Prompt surface: 6 Phase 3 curated workflows
+            # + 0.4.1 /organizational_analysis = 7.
             prompts = await session.list_prompts()
             prompt_names = {p.name for p in prompts.prompts}
-            assert len(prompts.prompts) == 6
+            assert len(prompts.prompts) == 7
             assert prompt_names == {
                 "bottleneck_analysis",
                 "conformance_workflow",
                 "executive_summary",
                 "new_log_onboarding",
                 "ocel_flattening_workflow",
+                "organizational_analysis",
                 "variant_exploration",
             }
 
