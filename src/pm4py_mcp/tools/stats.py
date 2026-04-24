@@ -141,10 +141,8 @@ def sample_case_ids(
             "strategy": "first",
         }
 
-    if strategy == "longest":
-        selected = case_sizes.nlargest(n)
-    else:  # "shortest"
-        selected = case_sizes.nsmallest(n)
+    # strategy is "longest" or "shortest" at this point; first was handled above.
+    selected = case_sizes.nlargest(n) if strategy == "longest" else case_sizes.nsmallest(n)
 
     return {
         "log_id": log_id,

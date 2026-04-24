@@ -152,7 +152,6 @@ def test_abstract_case_keeps_nan_when_opted_out(log_id: str) -> None:
 def test_abstract_case_nan_filter_preserves_non_nan_values() -> None:
     """On a log with NaN attrs, non-NaN values survive the filter unchanged."""
     import pandas as pd
-
     import pm4py as _pm4py
 
     # Craft a 2-event case where event 1 has CRP=59 but event 2 has CRP missing.
