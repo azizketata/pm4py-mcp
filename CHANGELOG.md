@@ -254,7 +254,8 @@ First PyPI release claiming the `pm4py-mcp` name. No user-facing functionality b
 - CI matrix: Python 3.10–3.13 × Ubuntu / macOS / Windows.
 - PyPI Trusted Publishing workflow: TestPyPI for pre-release tags, PyPI for release tags.
 
-[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.2
 [0.3.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.2.0

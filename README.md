@@ -2,7 +2,7 @@
 
 An AGPL-licensed, stdio-first **Model Context Protocol** server that wraps [PM4Py](https://github.com/process-intelligence-solutions/pm4py) behind a small handle-based tool surface — making research-grade process mining available to Claude and any MCP-capable agent, locally and on open standards (XES, **OCEL 2.0**, BPMN, PNML).
 
-> **Status:** Phase 3 shipped — `pm4py-mcp 0.3.1` ships **48 workflow-shaped tools + 6 curated prompts** spanning I/O, discovery, conformance, filtering, statistics, visualization, OCEL 2.0 object-centric process mining, **textual abstractions** the LLM can reason over, **domain-context injection**, and **Markdown report rendering**. Installable via `uvx pm4py-mcp`. (0.3.1 adds the `PM4PY_MCP_CWD_HINT` env var for relative-path resolution + prompt-template polish driven by Sepsis dogfooding.)
+> **Status:** Phase 3 shipped — `pm4py-mcp 0.3.2` ships **49 workflow-shaped tools + 6 curated prompts** spanning I/O, discovery, conformance, filtering, statistics, visualization, OCEL 2.0 object-centric process mining, **textual abstractions** the LLM can reason over, **domain-context injection**, and **Markdown report rendering**. Installable via `uvx pm4py-mcp`. (0.3.2 adds `sample_case_ids`, sparse-by-default `abstract_case`, and output-path `PM4PY_MCP_CWD_HINT` support — all driven by end-to-end dogfooding on Sepsis.)
 
 **Today** — load XES / CSV / Parquet logs or OCEL 2.0 (JSON / XML / SQLite), discover Petri nets / process trees / BPMN / DFGs / object-centric Petri nets / OC-DFGs, run token-replay or alignment conformance, filter chains, render dual-channel PNG + SVG — and now **turn every artifact into a textual abstraction the LLM can read directly**, **register domain SOPs that prompts respect across the session**, and **render a final Markdown report from accumulated findings**. 48 natural-language tools + 6 slash-command prompts, fully local, nothing leaves your machine.
 
@@ -98,7 +98,7 @@ Once a benchmark log is downloaded, the fastest way to see 0.3.0's agentic layer
 
 Claude chains `load_event_log` → `describe_log` → `abstract_log_features` → `abstract_log_attributes` → `abstract_variants` and writes a ≤300-word first-impression summary covering case count, activity spread, dominant variants, and anomalies — in **one turn**, no manual tool chaining. This is the same prompt library 0.3.0 ships six canonical entries for: `/new_log_onboarding`, `/conformance_workflow`, `/bottleneck_analysis`, `/variant_exploration`, `/ocel_flattening_workflow`, `/executive_summary`.
 
-## Tool catalog (Phase 1 + 2 + 3 — 48 tools)
+## Tool catalog (Phase 1 + 2 + 3 — 49 tools)
 
 All tools accept a handle (`log_id`, `petri_id`, `ocel_id`, …) or — for `load_*` tools — a file path. None returns the log itself; responses are always compact summaries plus new handles.
 
@@ -118,13 +118,14 @@ All tools accept a handle (`log_id`, `petri_id`, `ocel_id`, …) or — for `loa
 | `flatten_ocel(ocel_id, object_type)` | **Composability bridge** — projects to a traditional `log_id` usable by every Phase 1 tool. |
 | `export_ocel(ocel_id, format, path)` | Write JSON-OCEL / XML-OCEL / SQLite back out. |
 
-### Statistics (4)
+### Statistics (5)
 | Tool | Purpose |
 |---|---|
 | `get_variants(log_id, top_k)` | Most-common trace variants and counts. |
 | `get_start_end_activities(log_id)` | First/last activity frequency dicts. |
 | `get_case_durations(log_id)` | Min/max/mean/median + p50/p75/p90/p95/p99. |
 | `get_cycle_time(log_id)` | Average inter-completion delay. |
+| `sample_case_ids(log_id, n, strategy)` | Sample case IDs (`first` / `longest` / `shortest`) for `abstract_case` drill-downs. **(0.3.2)** |
 
 ### Traditional discovery (4)
 | Tool | Purpose |
