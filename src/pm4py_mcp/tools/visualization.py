@@ -153,7 +153,7 @@ def visualize_dotted_chart(
     log_id: str,
     attributes: list[str] | None = None,
 ) -> list[Any]:
-    """Render a dotted chart (matplotlib, PNG-only).
+    """Render a dotted chart (Graphviz/neato, PNG-only output via our helper).
 
     Dotted charts project events onto a time-vs-value scatter using the
     provided ``attributes``. Default ``["concept:name", "time:timestamp"]``
@@ -161,13 +161,14 @@ def visualize_dotted_chart(
     log. Pass other attribute names (e.g. ``["org:resource", "time:timestamp"]``)
     to see resource timelines or any numeric/categorical column.
 
-    No Graphviz dependency — matplotlib is a pm4py runtime dep.
+    Requires the ``dot`` / ``neato`` binaries from Graphviz (same dependency
+    as the Phase 1 visualization tools).
     """
     _, log = registry.get(log_id, expected_kind="log")
     attrs = list(attributes) if attributes is not None else list(_DEFAULT_DOTTED_CHART_ATTRS)
 
-    # Validate every attribute is present to fail fast with a helpful message
-    # instead of letting pm4py surface a cryptic KeyError.
+    # Validate attributes BEFORE check_graphviz so the validation path runs
+    # on systems without Graphviz (for error-translation testing).
     available = set(log.columns)
     missing = [a for a in attrs if a not in available]
     if missing:
@@ -175,6 +176,8 @@ def visualize_dotted_chart(
             f"Dotted-chart attributes not found in log: {missing}. "
             f"Available columns (first 20): {sorted(available)[:20]}."
         )
+
+    check_graphviz()
 
     def _save(path: str) -> None:
         pm4py.save_vis_dotted_chart(log, path, attributes=attrs)
@@ -192,14 +195,14 @@ def visualize_performance_spectrum(
     log_id: str,
     activities: list[str],
 ) -> list[Any]:
-    """Render a performance spectrum (matplotlib, PNG-only).
+    """Render a performance spectrum (Graphviz/neato, PNG-only output via our helper).
 
     Plots the duration of each case along an ordered activity list, revealing
     bottleneck segments visually. ``activities`` is required — the chart is
     only meaningful when the caller picks a subset of activities to track.
     Typically the activities of interest from the dominant variant(s).
 
-    No Graphviz dependency — matplotlib is a pm4py runtime dep.
+    Requires the ``dot`` / ``neato`` binaries from Graphviz.
     """
     _, log = registry.get(log_id, expected_kind="log")
     if not activities:
@@ -217,6 +220,8 @@ def visualize_performance_spectrum(
             f"Activities not found in log: {missing}. "
             f"Available activities (first 20): {sorted(available)[:20]}."
         )
+
+    check_graphviz()
 
     def _save(path: str) -> None:
         pm4py.save_vis_performance_spectrum(log, activities, path)

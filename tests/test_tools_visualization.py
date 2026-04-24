@@ -163,11 +163,9 @@ def _assert_render_blocks(blocks: list) -> None:  # type: ignore[type-arg]
 # --- 0.4.1: matplotlib-backed viz (no Graphviz dependency) ---
 
 
+@needs_graphviz
 def test_visualize_dotted_chart_default_attrs(log_id: str) -> None:
-    """Dotted chart with default attributes runs without Graphviz."""
-    import os
-
-    os.environ.setdefault("MPLBACKEND", "Agg")
+    """Dotted chart with default attributes — Graphviz/neato-backed despite the matplotlib-flavoured helper naming."""
     blocks = visualize_dotted_chart(log_id)
     assert isinstance(blocks, list)
     caption = blocks[0]
@@ -191,10 +189,8 @@ def test_visualize_dotted_chart_wrong_kind_raises() -> None:
         visualize_dotted_chart(h)
 
 
+@needs_graphviz
 def test_visualize_performance_spectrum_happy(log_id: str) -> None:
-    import os
-
-    os.environ.setdefault("MPLBACKEND", "Agg")
     # tiny_log activities: register, triage, treat, discharge
     blocks = visualize_performance_spectrum(log_id, ["register", "triage", "treat"])
     caption = blocks[0]

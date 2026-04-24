@@ -209,7 +209,7 @@ Each viz tool saves **both PNG and SVG** to `~/.pm4py-mcp/workspace/`, returns a
 | `visualize_powl(powl_id)` | Render a POWL model — partial-order edges between sub-workflows. **(0.4.0)** |
 
 ### Advanced visualization (2) **(0.4.1)**
-Matplotlib-backed, PNG-only (matplotlib SVG exports are pathological for dotted charts).
+PNG-only (single-channel). Graphviz/neato-backed under the hood — requires the `dot`/`neato` binaries like other viz tools.
 
 | Tool | Purpose |
 |---|---|
