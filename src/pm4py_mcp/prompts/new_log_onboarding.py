@@ -19,15 +19,18 @@ def new_log_onboarding(log_path: str) -> list[UserMessage]:
 
 1. `load_event_log(path="{log_path}")` — get a log_id.
 2. `describe_log(log_id)` — case/event counts, activities preview, time range.
-3. `abstract_log_features(log_id)` — textual description of log-level features.
-4. `abstract_log_attributes(log_id)` — attribute distributions.
-5. `abstract_variants(log_id)` — trace variants ranked by frequency.
+3. `get_case_durations(log_id)` — p50/p75/p90/p95/p99 percentiles. If p90/p50 > 5, flag the long tail as the headline anomaly.
+4. `get_variants(log_id, top_k=10)` — top-10 variants with counts. Cheap and structured; gives you the dominant-path coverage percentage.
+5. `abstract_log_features(log_id)` — textual log-level feature signal (activity frequencies, succession counts).
+6. `abstract_log_attributes(log_id)` — attribute distributions (numeric quantiles, categorical value frequencies).
+7. (Optional — only if step 4 surfaces a long variant worth explaining) `abstract_variants(log_id, max_len=3000)` for per-variant performance prose.
 
 Then write a ≤300-word first-impression summary covering:
 - **Scale:** case count, event count, activity count, time window.
-- **Process shape:** the dominant variant(s) and what they reveal.
-- **Anomalies:** rare variants, unusual attribute distributions, gaps.
+- **Duration profile:** median and p90; call out the tail when p90/p50 > 5.
+- **Process shape:** dominant variants from step 4 and what they reveal.
+- **Anomalies:** rare variants, unusual attribute distributions, protocol deviations.
 - **Next step:** one concrete follow-up (conformance check, bottleneck analysis, or filter-and-zoom).
 
-Be concrete: cite activity names and counts drawn from the abstractions, not generalities."""
+Be concrete: cite activity names, case counts, and duration numbers drawn from the tool outputs — not generalities."""
     return [UserMessage(preamble + body)]
