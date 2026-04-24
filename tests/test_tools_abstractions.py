@@ -16,6 +16,7 @@ from pm4py_mcp.tools.abstractions import (
     abstract_ocdfg,
     abstract_ocel,
     abstract_petri_net,
+    abstract_sna,
     abstract_stream,
     abstract_temporal_profile,
     abstract_variants,
@@ -399,3 +400,52 @@ def test_abstract_temporal_profile_wrong_kind_raises(log_id: str) -> None:
 def test_abstract_temporal_profile_missing_handle_raises() -> None:
     with pytest.raises(HandleNotFound):
         abstract_temporal_profile("tprof-gone")
+
+
+# --- 0.4.1: abstract_sna ---
+
+
+def test_abstract_sna_happy_path() -> None:
+    from pm4py_mcp.tools.org_mining import discover_handover_network
+    from tests.fixtures import tiny_log_with_resources
+
+    lid = registry.put("log", tiny_log_with_resources())
+    sna_id = discover_handover_network(lid)["sna_id"]
+    result = abstract_sna(sna_id)
+    _assert_abstraction_shape(result, "abstract_sna", sna_id)
+    assert "Social network" in result["content"]
+    assert "weight=" in result["content"]
+    assert result["truncated"] is False
+
+
+def test_abstract_sna_respects_top_k() -> None:
+    from pm4py_mcp.tools.org_mining import discover_working_together_network
+    from tests.fixtures import tiny_log_with_resources
+
+    lid = registry.put("log", tiny_log_with_resources())
+    sna_id = discover_working_together_network(lid)["sna_id"]
+    result = abstract_sna(sna_id, top_k=2)
+    # At most 2 edge lines appear (signal: "weight=" substring count)
+    assert result["content"].count("weight=") <= 2
+
+
+def test_abstract_sna_empty_network_graceful() -> None:
+    """Zero-connection SNA objects still return a sensible string."""
+
+    class _EmptySNA:
+        connections: dict = {}
+
+    sna_id = registry.put("sna", _EmptySNA())
+    result = abstract_sna(sna_id)
+    assert "empty" in result["content"].lower()
+
+
+def test_abstract_sna_wrong_kind_raises() -> None:
+    log_id = registry.put("log", tiny_log())
+    with pytest.raises(InvalidKind):
+        abstract_sna(log_id)
+
+
+def test_abstract_sna_missing_handle_raises() -> None:
+    with pytest.raises(HandleNotFound):
+        abstract_sna("sna-gone")

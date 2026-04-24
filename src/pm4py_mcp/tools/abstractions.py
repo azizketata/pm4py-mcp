@@ -315,6 +315,59 @@ def abstract_log_skeleton(log_skeleton_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def abstract_sna(sna_id: str, top_k: int = 10) -> dict[str, Any]:
+    """Describe the top-k connections of a social-network (SNA) model in prose.
+
+    pm4py's LLM abstractions do NOT ship an ``sna_to_descr``; this tool is
+    hand-written. It reports:
+
+    - total resource / connection counts
+    - the ``top_k`` strongest connections by weight (source → target, weight)
+    - resources with no outgoing connections (network sinks — common endpoints)
+    - resources with no incoming connections (network sources — unusual entry points)
+
+    Works on any handle produced by ``discover_handover_network``,
+    ``discover_working_together_network``, ``discover_subcontracting_network``,
+    or ``discover_activity_based_resource_similarity``. ``truncated`` is always
+    ``False`` since ``top_k`` bounds the output.
+    """
+    _, sna = registry.get(sna_id, expected_kind="sna")
+    conns = dict(getattr(sna, "connections", {}) or {})
+
+    if not conns:
+        content = "This network has no connections (empty)."
+        return AbstractionResult.build(content, None, sna_id, "abstract_sna").as_dict()
+
+    sources_in_edges = {s for (s, _t) in conns.keys()}
+    targets_in_edges = {t for (_s, t) in conns.keys()}
+    all_resources = sources_in_edges | targets_in_edges
+    # Sinks: appear as targets but never as sources (only incoming edges).
+    sinks = targets_in_edges - sources_in_edges
+    # Sources: appear as sources but never as targets (only outgoing edges).
+    sources = sources_in_edges - targets_in_edges
+
+    top_edges = sorted(conns.items(), key=lambda kv: -float(kv[1]))[:top_k]
+
+    lines = [
+        f"Social network with {len(all_resources)} resources and {len(conns)} connections.",
+        f"Top {len(top_edges)} connections by weight:",
+    ]
+    for (s, t), w in top_edges:
+        lines.append(f"  {s} -> {t}  (weight={float(w):.4f})")
+    if sources:
+        lines.append(
+            f"Resources with no incoming connection ({len(sources)}): {sorted(sources)}"
+        )
+    if sinks:
+        lines.append(
+            f"Resources with no outgoing connection ({len(sinks)}): {sorted(sinks)}"
+        )
+
+    content = "\n".join(lines)
+    return AbstractionResult.build(content, None, sna_id, "abstract_sna").as_dict()
+
+
+@mcp.tool()
 def abstract_temporal_profile(temporal_profile_id: str) -> dict[str, Any]:
     """Natural-language description of a discovered temporal profile.
 
@@ -341,6 +394,7 @@ __all__ = [
     "abstract_ocdfg",
     "abstract_ocel",
     "abstract_petri_net",
+    "abstract_sna",
     "abstract_stream",
     "abstract_temporal_profile",
     "abstract_variants",

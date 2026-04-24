@@ -36,6 +36,8 @@ Kind = Literal[
     "log_skeleton",
     "powl",
     "temporal_profile",
+    "sna",
+    "org_roles",
 ]
 
 _PREFIX: dict[Kind, str] = {
@@ -51,6 +53,8 @@ _PREFIX: dict[Kind, str] = {
     "log_skeleton": "lsk",
     "powl": "powl",
     "temporal_profile": "tprof",
+    "sna": "sna",
+    "org_roles": "role",
 }
 
 

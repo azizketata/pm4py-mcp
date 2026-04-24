@@ -58,6 +58,41 @@ def tiny_log_xes(tmp_path: Path) -> Path:
     return out
 
 
+def tiny_log_with_resources() -> pd.DataFrame:
+    """Return the tiny log augmented with an ``org:resource`` column.
+
+    Used by org-mining tests (handover / working-together / subcontracting /
+    similarity / roles all require a resource key).
+
+    Resource assignments:
+      register → nurse_a (all cases)
+      triage → nurse_b (case-1, case-2) / nurse_a (case-3)
+      treat → doctor (all cases)
+      discharge → nurse_b (cases where discharge exists)
+    """
+    rows = [
+        ("case-1", "register", "2024-01-01T08:00:00", "nurse_a"),
+        ("case-1", "triage", "2024-01-01T08:15:00", "nurse_b"),
+        ("case-1", "treat", "2024-01-01T09:00:00", "doctor"),
+        ("case-1", "discharge", "2024-01-01T11:30:00", "nurse_b"),
+        ("case-2", "register", "2024-01-01T09:00:00", "nurse_a"),
+        ("case-2", "triage", "2024-01-01T09:20:00", "nurse_b"),
+        ("case-2", "treat", "2024-01-01T10:30:00", "doctor"),
+        ("case-2", "discharge", "2024-01-01T13:00:00", "nurse_b"),
+        ("case-3", "register", "2024-01-01T10:00:00", "nurse_a"),
+        ("case-3", "triage", "2024-01-01T10:10:00", "nurse_a"),
+        ("case-3", "treat", "2024-01-01T11:00:00", "doctor"),
+    ]
+    df = pd.DataFrame(rows, columns=["case_id", "activity", "timestamp", "resource"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    return pm4py.format_dataframe(
+        df,
+        case_id="case_id",
+        activity_key="activity",
+        timestamp_key="timestamp",
+    ).rename(columns={"resource": "org:resource"})
+
+
 def tiny_ocel() -> pm4py.objects.ocel.obj.OCEL:
     """Return a synthetic OCEL 2.0 with 3 object types, 10 events, 8 objects.
 
