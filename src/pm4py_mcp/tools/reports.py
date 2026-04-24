@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from pm4py_mcp import __version__
+from pm4py_mcp._paths import resolve_output_path
 from pm4py_mcp.errors import WorkspaceError
 from pm4py_mcp.server import mcp
 from pm4py_mcp.workspace import derived_path, ensure_workspace
@@ -32,15 +33,14 @@ _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 def _resolve_output_path(output_path: str | None) -> Path:
     """Decide where to write the report.
 
-    * ``None`` → unique workspace file like ``report-abc123.md``.
-    * Bare filename (no path separators) → workspace directory.
-    * Path with separators → used verbatim (absolute or CWD-relative).
+    Delegates the standard resolution rules (absolute / bare filename /
+    relative-with-subdir + PM4PY_MCP_CWD_HINT fallback) to ``_paths``.
+    Adds report-specific logic: ``None`` → unique workspace file like
+    ``report-abc123.md``; always enforces a ``.md`` suffix.
     """
     if output_path is None:
         return derived_path("report", "md")
-
-    p = Path(output_path).expanduser()
-    out = ensure_workspace() / p if len(p.parts) == 1 else p.resolve()
+    out = resolve_output_path(output_path, ensure_workspace())
     if out.suffix.lower() != ".md":
         out = out.with_suffix(".md")
     return out

@@ -25,7 +25,7 @@ from importlib.metadata import version
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-EXPECTED_TOOL_COUNT = 48
+EXPECTED_TOOL_COUNT = 49
 EXPECTED_PROMPT_COUNT = 6
 EXPECTED_PROMPT_NAMES = {
     "bottleneck_analysis",
@@ -45,6 +45,7 @@ EXPECTED_CORE_TOOLS = (
     "set_domain_context",
     "get_domain_context",
     "render_report",
+    "sample_case_ids",  # 0.3.2
 )
 
 

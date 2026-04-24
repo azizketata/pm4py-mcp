@@ -15,7 +15,7 @@ import pandas as pd
 import pm4py
 from mcp.server.fastmcp import Context
 
-from pm4py_mcp._paths import resolve_input_path
+from pm4py_mcp._paths import resolve_input_path, resolve_output_path
 from pm4py_mcp.errors import UnsupportedFormat, WorkspaceError
 from pm4py_mcp.models import ExportResult, LogSummary, WorkspaceEntry
 from pm4py_mcp.server import mcp, registry
@@ -167,9 +167,10 @@ def export_log(log_id: str, format: str, path: str) -> dict[str, Any]:
     _, log_obj = registry.get(log_id, expected_kind="log")
     log = cast(pd.DataFrame, log_obj)
 
-    p = Path(path).expanduser()
-    # bare filename → put in workspace; otherwise honor the path as-is
-    out = ensure_workspace() / p if len(p.parts) == 1 else p.resolve()
+    # Output-path resolution rules (0.3.2):
+    #   absolute → as-is; bare filename → workspace/; relative+subdir → CWD
+    #   first, then PM4PY_MCP_CWD_HINT fallback if CWD parent doesn't exist.
+    out = resolve_output_path(path, ensure_workspace())
 
     # Ensure correct extension
     expected_ext = f".{fmt}"

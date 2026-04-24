@@ -72,4 +72,41 @@ def resolve_input_path(path: str, kind: str) -> Path:
     )
 
 
-__all__ = ["ENV_HINT", "resolve_input_path"]
+def resolve_output_path(path: str, workspace: Path) -> Path:
+    """Decide where to write a user-supplied output path.
+
+    Rules (preserve 0.3.1 behavior, add hint fallback for the middle case):
+
+    1. Absolute path → use as-is (user intent is explicit).
+    2. Bare filename (no path separators) → land in ``workspace/``
+       (unchanged from 0.3.1; documented as the "bare filename → workspace"
+       convention across ``export_log``, ``export_ocel``, ``render_report``).
+    3. Relative path with a directory component → try ``CWD / path``; if
+       the parent directory doesn't exist yet, try ``HINT / path`` before
+       falling back to CWD-resolution. This fixes the 0.3.1 "Known" issue
+       where relative output paths with subdirs went to a surprising CWD.
+
+    The hint is a *pure fallback* — it's consulted only when the relative
+    path's parent directory doesn't already exist under CWD. Existing
+    CWD-relative workflows keep working unchanged.
+    """
+    p = Path(path).expanduser()
+    if p.is_absolute():
+        return p
+    if len(p.parts) == 1:
+        return workspace / p
+    # Relative with directory component.
+    cwd_parent = (Path.cwd() / p).parent
+    if cwd_parent.is_dir():
+        return (Path.cwd() / p).resolve()
+    hint = os.environ.get(ENV_HINT)
+    if hint:
+        hint_candidate = (Path(hint).expanduser() / p).resolve()
+        if hint_candidate.parent.is_dir():
+            return hint_candidate
+    # Neither CWD-parent nor HINT-parent exists; fall back to CWD-relative
+    # (caller will typically mkdir the parent themselves).
+    return (Path.cwd() / p).resolve()
+
+
+__all__ = ["ENV_HINT", "resolve_input_path", "resolve_output_path"]

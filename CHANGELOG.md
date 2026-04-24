@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.2] - TBD
+
+Dogfooding-driven polish, driven by a same-day full-chain session (`/new_log_onboarding` → `/bottleneck_analysis` → `abstract_case` drill-down) on the Sepsis benchmark. Three concrete problems surfaced and 0.3.2 fixes them. No tool-surface removals; one new tool (`sample_case_ids`) brings the count from 48 to 49.
+
+### Added
+
+- **`sample_case_ids(log_id, n=5, strategy="first"|"longest"|"shortest")`** — return a small sample of case IDs without exporting the log to disk first. Fixes the "how do I get a `case_id` to pass to `abstract_case`?" workflow gap the dogfooding hit. `"longest"`/`"shortest"` sort by event count and include an `event_counts` dict in the response; `"first"` preserves original order.
+- **`abstract_case(..., drop_nan_attrs=True)`** — new parameter, default True. Strips `= nan ;` attribute dumps from `case_to_descr` output before returning. Real impact: a 15-event Sepsis case dropped from 11,460 chars (3,041 approx-tokens) to 2,538 chars — **77 % reduction**, no signal lost. Pass `drop_nan_attrs=False` for the exact pre-0.3.2 verbose output.
+- **`PM4PY_MCP_CWD_HINT` fallback for output paths** — `export_log` and `render_report` now honor the hint when a relative output path's parent directory doesn't exist under CWD. Closes 0.3.1's "Known" carry-over. New helper `resolve_output_path` in `src/pm4py_mcp/_paths.py` delegated from both tools.
+
+### Changed
+
+- **`/new_log_onboarding` prompt body** gained two guidance additions:
+  - A caveat that `get_case_durations` measures case *lifetime*, not hospital/bed time — for readmission-style logs (where one case ID spans admission + later re-presentation), a long p90 may reflect outpatient gaps rather than throughput bottlenecks. Sepsis dogfooding surfaced this: the apparent "93-day p90 hospital stay" was really a 93-day case lifetime with ~4-month readmission intervals.
+  - A drill-in hint pointing at `sample_case_ids(..., strategy="longest")` → `abstract_case`.
+- `abstract_case` error message now refers callers to `sample_case_ids` (instead of just `get_variants` / `filter`) when the supplied `case_id` isn't in the log.
+
+### Fixed
+
+- Output-path resolution in `export_log` / `render_report` now uses the shared `resolve_output_path` helper. Previously, a relative path with a subdirectory component that didn't exist under CWD would silently create the subdir in a surprising location; now, if `PM4PY_MCP_CWD_HINT` points at a directory where the subdir already exists, that location is used — matching the 0.3.1 input-path resolution semantics.
+
+### Dogfooding receipts
+
+The decision to ship `sample_case_ids` + `drop_nan_attrs` came from an end-to-end session where:
+1. `/bottleneck_analysis` on the Sepsis long-stay cohort (207 cases ≥ 30 days) revealed the "long stay" anomaly was actually a 119-day-average `Release A → Return ER` readmission interval (184 cases).
+2. Drilling into a specific case required exporting the filtered log to CSV and grepping for case IDs — 0.3.2's `sample_case_ids` closes that loop so Claude can pick a case autonomously.
+3. The per-case `abstract_case` output was 90 % NaN padding (27 of ~30 attributes NaN on most events). `drop_nan_attrs=True` cut that to signal-only output.
+
 ## [0.3.1] - TBD
 
 Patch release driven by same-day dogfooding of `pm4py-mcp 0.3.0` on the Sepsis benchmark. 0.3.0's prompt templates got the user 80 % of the way but three UX failures surfaced on the first real run. 0.3.1 closes them. No tool surface changes; no breaking changes.

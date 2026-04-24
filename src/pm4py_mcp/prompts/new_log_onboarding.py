@@ -27,10 +27,10 @@ def new_log_onboarding(log_path: str) -> list[UserMessage]:
 
 Then write a ≤300-word first-impression summary covering:
 - **Scale:** case count, event count, activity count, time window.
-- **Duration profile:** median and p90; call out the tail when p90/p50 > 5.
+- **Duration profile:** median and p90; call out the tail when p90/p50 > 5. Note that `get_case_durations` measures case *lifetime* (first to last event), not hospital/bed time — for logs where one case can span multiple visits (readmission-style), a long tail may reflect outpatient gaps rather than throughput bottlenecks. When the tail is dramatic, check whether cases end on `Return *`, `Readmit`, or a similar revisit activity before calling the process "slow".
 - **Process shape:** dominant variants from step 4 and what they reveal.
 - **Anomalies:** rare variants, unusual attribute distributions, protocol deviations.
-- **Next step:** one concrete follow-up (conformance check, bottleneck analysis, or filter-and-zoom).
+- **Next step:** one concrete follow-up (conformance check, bottleneck analysis, or filter-and-zoom). If you want to inspect a specific case, call `sample_case_ids(log_id, n=3, strategy="longest")` then `abstract_case(log_id, case_id=<one of those>)`.
 
 Be concrete: cite activity names, case counts, and duration numbers drawn from the tool outputs — not generalities."""
     return [UserMessage(preamble + body + path_tip_footer(log_path))]

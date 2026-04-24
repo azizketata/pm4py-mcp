@@ -45,10 +45,10 @@ async def test_phase3_agentic_workflow_over_stdio(tmp_path: Path) -> None:
             assert init.serverInfo.name == "pm4py-mcp"
 
             # Tool surface: 24 Phase 1 + 12 Phase 2 OCEL + 9 Phase 3 abstractions
-            # + 2 context + 1 render_report = 48
+            # + 2 context + 1 render_report + 1 sample_case_ids (0.3.2) = 49
             tools = await session.list_tools()
             tool_names = {t.name for t in tools.tools}
-            assert len(tools.tools) == 48
+            assert len(tools.tools) == 49
 
             for expected in (
                 "abstract_log_features",

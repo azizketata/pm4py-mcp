@@ -11,6 +11,7 @@ from pm4py_mcp.tools.stats import (
     get_cycle_time,
     get_start_end_activities,
     get_variants,
+    sample_case_ids,
 )
 from tests.fixtures import tiny_log
 
@@ -76,3 +77,56 @@ def test_stats_tools_raise_on_missing_handle() -> None:
     for fn in (get_variants, get_start_end_activities, get_case_durations, get_cycle_time):
         with pytest.raises(HandleNotFound):
             fn("log-nope")
+    with pytest.raises(HandleNotFound):
+        sample_case_ids("log-nope")
+
+
+# --- sample_case_ids (0.3.2) ---
+
+
+def test_sample_case_ids_first_strategy_preserves_order() -> None:
+    log_id = registry.put("log", tiny_log())
+    result = sample_case_ids(log_id, n=3, strategy="first")
+    assert result["case_ids"] == ["case-1", "case-2", "case-3"]
+    assert result["total_cases"] == 3
+    assert result["strategy"] == "first"
+    # first strategy omits event_counts per docstring
+    assert "event_counts" not in result
+
+
+def test_sample_case_ids_first_caps_at_n() -> None:
+    log_id = registry.put("log", tiny_log())
+    result = sample_case_ids(log_id, n=2, strategy="first")
+    assert result["case_ids"] == ["case-1", "case-2"]
+    assert result["total_cases"] == 3
+
+
+def test_sample_case_ids_longest_strategy() -> None:
+    log_id = registry.put("log", tiny_log())
+    # tiny_log: case-1 and case-2 have 4 events each, case-3 has 3 events.
+    result = sample_case_ids(log_id, n=2, strategy="longest")
+    assert set(result["case_ids"]) == {"case-1", "case-2"}
+    assert "event_counts" in result
+    assert all(v == 4 for v in result["event_counts"].values())
+
+
+def test_sample_case_ids_shortest_strategy() -> None:
+    log_id = registry.put("log", tiny_log())
+    result = sample_case_ids(log_id, n=1, strategy="shortest")
+    assert result["case_ids"] == ["case-3"]
+    assert result["event_counts"]["case-3"] == 3
+
+
+def test_sample_case_ids_n_zero_returns_empty() -> None:
+    log_id = registry.put("log", tiny_log())
+    result = sample_case_ids(log_id, n=0)
+    assert result["case_ids"] == []
+    assert result["total_cases"] == 0  # short-circuit path
+
+
+def test_sample_case_ids_wrong_kind_raises() -> None:
+    from pm4py_mcp.errors import InvalidKind
+
+    h = registry.put("petri_net", object())
+    with pytest.raises(InvalidKind):
+        sample_case_ids(h)

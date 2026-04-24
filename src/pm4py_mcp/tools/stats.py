@@ -8,7 +8,7 @@ is avoided — we summarize rather than dump.
 from __future__ import annotations
 
 import statistics
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import pandas as pd
 import pm4py
@@ -101,6 +101,61 @@ def get_case_durations(log_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def sample_case_ids(
+    log_id: str,
+    n: int = 5,
+    strategy: Literal["first", "longest", "shortest"] = "first",
+) -> dict[str, Any]:
+    """Return a small sample of case IDs from a log.
+
+    Useful for picking a concrete ``case_id`` to pass to ``abstract_case``
+    without having to export the log to disk first.
+
+    Strategies:
+    - ``"first"``: IDs in original order (cheap; no sort).
+    - ``"longest"``: the ``n`` cases with the most events.
+    - ``"shortest"``: the ``n`` cases with the fewest events.
+
+    For ``longest`` / ``shortest``, the response includes an ``event_counts``
+    dict so callers can see the sort key; ``first`` omits it.
+    """
+    if n < 1:
+        return {"log_id": log_id, "case_ids": [], "total_cases": 0, "strategy": strategy}
+
+    _, log_obj = registry.get(log_id, expected_kind="log")
+    log = cast(pd.DataFrame, log_obj)
+    case_sizes = log.groupby("case:concept:name").size()
+    total = int(case_sizes.shape[0])
+
+    if strategy == "first":
+        seen: list[str] = []
+        for cid in log["case:concept:name"]:
+            if cid not in seen:
+                seen.append(str(cid))
+                if len(seen) >= n:
+                    break
+        return {
+            "log_id": log_id,
+            "case_ids": seen,
+            "total_cases": total,
+            "strategy": "first",
+        }
+
+    if strategy == "longest":
+        selected = case_sizes.nlargest(n)
+    else:  # "shortest"
+        selected = case_sizes.nsmallest(n)
+
+    return {
+        "log_id": log_id,
+        "case_ids": [str(k) for k in selected.index.tolist()],
+        "total_cases": total,
+        "strategy": strategy,
+        "event_counts": {str(k): int(v) for k, v in selected.items()},
+    }
+
+
+@mcp.tool()
 def get_cycle_time(log_id: str) -> dict[str, Any]:
     """Return the average cycle time (seconds between case completions).
 
@@ -119,4 +174,5 @@ __all__ = [
     "get_cycle_time",
     "get_start_end_activities",
     "get_variants",
+    "sample_case_ids",
 ]

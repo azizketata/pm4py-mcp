@@ -132,6 +132,56 @@ def test_abstract_case_without_event_attributes(log_id: str) -> None:
     _assert_abstraction_shape(result, "abstract_case", log_id)
 
 
+def test_abstract_case_drops_nan_by_default(log_id: str) -> None:
+    """0.3.2: tiny_log has no NaN attrs, so output shouldn't contain ' = nan'."""
+    result = abstract_case(log_id, case_id="case-1")
+    assert " = nan" not in result["content"]
+
+
+def test_abstract_case_keeps_nan_when_opted_out(log_id: str) -> None:
+    """Backward-compat path: drop_nan_attrs=False preserves pm4py's raw output.
+
+    tiny_log has no NaN attributes, so the opt-out flag is functionally a
+    no-op here; the assertion is simply that the call works and content is
+    non-empty.
+    """
+    verbose = abstract_case(log_id, case_id="case-1", drop_nan_attrs=False)
+    assert len(verbose["content"]) > 0
+
+
+def test_abstract_case_nan_filter_preserves_non_nan_values() -> None:
+    """On a log with NaN attrs, non-NaN values survive the filter unchanged."""
+    import pandas as pd
+
+    import pm4py as _pm4py
+
+    # Craft a 2-event case where event 1 has CRP=59 but event 2 has CRP missing.
+    df = pd.DataFrame(
+        [
+            ("c1", "register", "2024-01-01T08:00:00", 59.0),
+            ("c1", "discharge", "2024-01-01T12:00:00", None),
+        ],
+        columns=["case_id", "activity", "timestamp", "CRP"],
+    )
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    formatted = _pm4py.format_dataframe(
+        df, case_id="case_id", activity_key="activity", timestamp_key="timestamp"
+    )
+    log_with_nans = registry.put("log", formatted)
+
+    sparse = abstract_case(log_with_nans, "c1", drop_nan_attrs=True)["content"]
+    verbose = abstract_case(log_with_nans, "c1", drop_nan_attrs=False)["content"]
+
+    # CRP=59 present in both (not a NaN value)
+    assert "CRP = 59" in sparse
+    assert "CRP = 59" in verbose
+    # NaN rendering gone from sparse, present in verbose
+    assert " = nan" not in sparse
+    assert " = nan" in verbose
+    # Sparse is strictly shorter
+    assert len(sparse) < len(verbose)
+
+
 # --- abstract_stream ---
 
 
