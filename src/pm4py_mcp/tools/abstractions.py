@@ -338,8 +338,8 @@ def abstract_sna(sna_id: str, top_k: int = 10) -> dict[str, Any]:
         content = "This network has no connections (empty)."
         return AbstractionResult.build(content, None, sna_id, "abstract_sna").as_dict()
 
-    sources_in_edges = {s for (s, _t) in conns.keys()}
-    targets_in_edges = {t for (_s, t) in conns.keys()}
+    sources_in_edges = {s for (s, _t) in conns}
+    targets_in_edges = {t for (_s, t) in conns}
     all_resources = sources_in_edges | targets_in_edges
     # Sinks: appear as targets but never as sources (only incoming edges).
     sinks = targets_in_edges - sources_in_edges
@@ -355,13 +355,9 @@ def abstract_sna(sna_id: str, top_k: int = 10) -> dict[str, Any]:
     for (s, t), w in top_edges:
         lines.append(f"  {s} -> {t}  (weight={float(w):.4f})")
     if sources:
-        lines.append(
-            f"Resources with no incoming connection ({len(sources)}): {sorted(sources)}"
-        )
+        lines.append(f"Resources with no incoming connection ({len(sources)}): {sorted(sources)}")
     if sinks:
-        lines.append(
-            f"Resources with no outgoing connection ({len(sinks)}): {sorted(sinks)}"
-        )
+        lines.append(f"Resources with no outgoing connection ({len(sinks)}): {sorted(sinks)}")
 
     content = "\n".join(lines)
     return AbstractionResult.build(content, None, sna_id, "abstract_sna").as_dict()

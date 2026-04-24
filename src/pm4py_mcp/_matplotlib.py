@@ -13,9 +13,9 @@ The inline-attachment budget rule (~700 KB) still applies, matching
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from pm4py_mcp.errors import WorkspaceError
 from pm4py_mcp.workspace import derived_path
@@ -52,9 +52,7 @@ def save_matplotlib_png(
     save_fn(str(png))
     png_path = Path(png)
     if not png_path.is_file():
-        raise WorkspaceError(
-            f"save_fn reported success but file is missing: {png_path}"
-        )
+        raise WorkspaceError(f"save_fn reported success but file is missing: {png_path}")
     inline = png_path.stat().st_size <= INLINE_BUDGET_BYTES
     return MatplotlibVizPayload(png_path=str(png_path), inline_attached=inline)
 

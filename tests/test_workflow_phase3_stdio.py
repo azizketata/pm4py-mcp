@@ -46,10 +46,11 @@ async def test_phase3_agentic_workflow_over_stdio(tmp_path: Path) -> None:
 
             # Tool surface: 24 Phase 1 + 12 Phase 2 OCEL + 9 Phase 3 abstractions
             # + 2 context + 1 render_report + 1 sample_case_ids (0.3.2)
-            # + 9 0.4.0 tools (4 discovery + 3 abstract + 1 POWL viz + 1 convert) = 58
+            # + 9 0.4.0 tools + 9 0.4.1 tools (5 org-mining + abstract_sna
+            #   + simulate_log + 2 advanced viz) = 67
             tools = await session.list_tools()
             tool_names = {t.name for t in tools.tools}
-            assert len(tools.tools) == 58
+            assert len(tools.tools) == 67
 
             for expected in (
                 "abstract_log_features",

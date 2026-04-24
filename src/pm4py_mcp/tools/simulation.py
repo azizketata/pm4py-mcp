@@ -102,7 +102,7 @@ def simulate_log(model_id: str, num_traces: int = 1000) -> dict[str, Any]:
         "source_kind": kind,
         "num_traces_requested": num_traces,
         "num_traces_produced": int(df["case:concept:name"].nunique()),
-        "num_events": int(len(df)),
+        "num_events": len(df),
     }
 
 

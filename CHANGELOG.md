@@ -6,6 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.1] - TBD
+
+Phase 2 Part 2 (second half) — **organizational mining + simulation + advanced visualization.** 9 new tools + 1 new prompt bring the total surface to **67 tools + 7 prompts**. 2 new registry kinds. After 0.4.1, Phase 2 Part 2 is complete.
+
+### Added
+
+**Organizational mining (5 tools)** — 1:1 discovery tools per-metric (not consolidated behind a `metric` parameter, per the OCEL-precedent choice). Each stores its result under a new registry kind with a `source_handle` breadcrumb pointing at the source `log_id`.
+
+- `discover_handover_network(log_id, beta=0, resource_key="org:resource")` — edges represent direct work handoffs between resources within a case.
+- `discover_working_together_network(log_id, resource_key="org:resource")` — undirected collaboration (same case participation).
+- `discover_subcontracting_network(log_id, n=2, resource_key="org:resource")` — "A briefly hands to B and resumes" patterns.
+- `discover_activity_based_resource_similarity(log_id, activity_key, resource_key)` — skill/role overlap via activity profiles.
+- `discover_organizational_roles(log_id, activity_key, resource_key)` — clusters resources by activity sharing. Stores under a new `org_roles` kind; returns top-5 roles in the response with their activity + resource sets.
+
+**Simulation (1 tool)**
+- `simulate_log(model_id, num_traces=1000)` — wraps `pm4py.play_out`. Accepts `petri_net` (tuple) or `process_tree` handles; returns a fresh **`log_id`** (regular log kind) so the simulated output composes with every Phase 1 tool (`describe_log`, `abstract_variants`, `conformance_*`, filters). `source_handle` points back at the generating model. Caps `num_traces` at 10,000 to protect against runaway playouts on cyclic models. Handles the pm4py-internal parameter-name difference between Petri (`noTraces`) and process-tree (`num_traces`) playout variants transparently. Process-tree playout's case-id-less trace output is backfilled with synthetic `sim-case-{i}` IDs + timestamps so the simulated log has the columns Phase 1 tools expect.
+
+**Advanced visualization (2 tools)** — matplotlib-backed, PNG-only. New parallel helper `src/pm4py_mcp/_matplotlib.py::save_matplotlib_png` keeps Graphviz's error handling clean in `viz.py`.
+- `visualize_dotted_chart(log_id, attributes=None)` — time-vs-value scatter. Default `attributes=["concept:name", "time:timestamp"]`. Validates attribute presence in the log and fails fast with a helpful message listing available columns.
+- `visualize_performance_spectrum(log_id, activities)` — duration-per-case across an ordered activity subset. `activities` required (no sensible default across all logs). Validates activity presence.
+
+**Abstractions (1 tool)**
+- `abstract_sna(sna_id, top_k=10)` — hand-written descriptor (pm4py has no `sna_to_descr`). Reports resource count, the top-k strongest connections by weight, and sink/source resources (no outgoing / no incoming edges). Works on any SNA handle regardless of which network-discovery tool produced it.
+
+**Prompts (1 new)**
+- `/organizational_analysis(log_path)` — canonical org-mining workflow: load → describe → handover + working-together networks + `abstract_sna` on each + organizational roles → narrate team structure, dominant handoffs, network sinks/sources, role clusters, bottleneck resources. Prerequisite: log must have an `org:resource` column; the prompt tells Claude to fail fast if absent.
+
+### Infrastructure
+
+- **2 new registry kinds**: `sna` (prefix `sna-`, used by all 4 network-discovery tools) and `org_roles` (prefix `role-`).
+- **New module `src/pm4py_mcp/_matplotlib.py`** — PNG-only rendering helper parallel to `viz.py::save_dual_channel`. Separate module by design — Graphviz and matplotlib have genuinely different failure modes.
+- **New tool modules** `src/pm4py_mcp/tools/org_mining.py` and `src/pm4py_mcp/tools/simulation.py` wired into `pm4py_mcp.tools.__init__` via the existing side-effect-import pattern.
+- **New test fixture `tiny_log_with_resources()`** in `tests/fixtures.py` — the original `tiny_log` had no `org:resource` column; org-mining tests use the enriched version while Phase 1/2/3 tests are unchanged.
+
+### Deferred (post-0.4.1)
+
+- **`visualize_sna`** — pm4py renders SNA as pyvis HTML, which is dead weight for Claude clients. Bridge via NetworkX + matplotlib deferred to 0.5.0 or later when the output can be a first-class inline PNG.
+- **`abstract_powl`** — pm4py upstream would need `powl_to_descr`; hand-writing is a research project.
+- **`run_duckdb_sql`**, **`semantic_anomaly_detect`** — 0.5.0+.
+
+### Design notes
+
+- **5 separate org-mining tools, not 1 consolidated `discover_sna(metric)`.** Matches the OCEL-filter-style precedent of keeping distinct semantic functions as distinct tools; per-metric kwargs (`beta` for handover, `n` for subcontracting) stay first-class instead of hiding behind `**kwargs`.
+- **`simulate_log` returns a regular `log` kind**, not a specialized `simulated_log` kind. That's the whole point — simulation output should be a first-class citizen that composes with every Phase 1 tool (`describe_log(simulated_id)`, `abstract_variants(simulated_id)`, etc.). This mirrors Phase 2's `flatten_ocel` design (OCEL → log_id composability bridge).
+
 ## [0.4.0] - TBD
 
 Phase 2 Part 2 (first half) — **advanced discovery + model conversions + POWL visualization.** 9 new tools bring the total surface to **58 tools**. Unlocks the three Phase 3-deferred abstractions (`abstract_declare`, `abstract_log_skeleton`, `abstract_temporal_profile`) and introduces POWL and model-conversion workflows. 4 new registry kinds. Semver minor.
@@ -303,7 +348,8 @@ First PyPI release claiming the `pm4py-mcp` name. No user-facing functionality b
 - CI matrix: Python 3.10–3.13 × Ubuntu / macOS / Windows.
 - PyPI Trusted Publishing workflow: TestPyPI for pre-release tags, PyPI for release tags.
 
-[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.4.1
 [0.4.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.4.0
 [0.3.2]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.2
 [0.3.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.1

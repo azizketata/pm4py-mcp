@@ -180,10 +180,7 @@ def visualize_dotted_chart(
         pm4py.save_vis_dotted_chart(log, path, attributes=attrs)
 
     result = save_matplotlib_png(_save, stem="dotted-chart")
-    caption = (
-        f"Dotted chart ({log_id}), attributes={attrs}\n"
-        f"PNG: {result.png_path}"
-    )
+    caption = f"Dotted chart ({log_id}), attributes={attrs}\nPNG: {result.png_path}"
     blocks: list[Any] = [caption]
     if result.inline_attached:
         blocks.append(Image(path=result.png_path))
@@ -225,10 +222,7 @@ def visualize_performance_spectrum(
         pm4py.save_vis_performance_spectrum(log, activities, path)
 
     result = save_matplotlib_png(_save, stem="perf-spectrum")
-    caption = (
-        f"Performance spectrum ({log_id}), activities={activities}\n"
-        f"PNG: {result.png_path}"
-    )
+    caption = f"Performance spectrum ({log_id}), activities={activities}\nPNG: {result.png_path}"
     blocks: list[Any] = [caption]
     if result.inline_attached:
         blocks.append(Image(path=result.png_path))

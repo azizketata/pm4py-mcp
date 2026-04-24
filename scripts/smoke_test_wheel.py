@@ -25,14 +25,15 @@ from importlib.metadata import version
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-EXPECTED_TOOL_COUNT = 58
-EXPECTED_PROMPT_COUNT = 6
+EXPECTED_TOOL_COUNT = 67
+EXPECTED_PROMPT_COUNT = 7
 EXPECTED_PROMPT_NAMES = {
     "bottleneck_analysis",
     "conformance_workflow",
     "executive_summary",
     "new_log_onboarding",
     "ocel_flattening_workflow",
+    "organizational_analysis",
     "variant_exploration",
 }
 EXPECTED_CORE_TOOLS = (
@@ -55,6 +56,13 @@ EXPECTED_CORE_TOOLS = (
     "abstract_temporal_profile",  # 0.4.0
     "visualize_powl",  # 0.4.0
     "convert_model",  # 0.4.0
+    "discover_handover_network",  # 0.4.1
+    "discover_working_together_network",  # 0.4.1
+    "discover_organizational_roles",  # 0.4.1
+    "abstract_sna",  # 0.4.1
+    "simulate_log",  # 0.4.1
+    "visualize_dotted_chart",  # 0.4.1
+    "visualize_performance_spectrum",  # 0.4.1
 )
 
 

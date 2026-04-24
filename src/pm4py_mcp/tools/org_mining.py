@@ -27,7 +27,7 @@ def _get_log(log_id: str) -> pd.DataFrame:
 def _sna_summary(sna: Any) -> dict[str, int]:
     """Return a compact shape summary for an SNA result."""
     conns = getattr(sna, "connections", {}) or {}
-    resources = {r for pair in conns.keys() for r in pair}
+    resources = {r for pair in conns for r in pair}
     return {
         "num_resources": len(resources),
         "num_connections": len(conns),

@@ -54,8 +54,9 @@ async def test_ocel_workflow_through_stdio() -> None:
             tools = await session.list_tools()
             # 24 Phase 1 + 12 Phase 2 + 9 Phase 3 abstractions
             # + 2 context + 1 render_report + 1 sample_case_ids (0.3.2)
-            # + 9 0.4.0 tools (4 discovery + 3 abstract + 1 POWL viz + 1 convert) = 58
-            assert len(tools.tools) == 58
+            # + 9 0.4.0 tools + 9 0.4.1 tools (5 org-mining + abstract_sna
+            #   + simulate_log + 2 advanced viz) = 67
+            assert len(tools.tools) == 67
 
             # 1. Load the bundled OCEL.
             r = await session.call_tool("load_ocel", {"path": str(EXAMPLE_OCEL)})
