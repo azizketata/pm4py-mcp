@@ -53,8 +53,12 @@ def test_load_ocel_returns_summary_and_handle(tmp_path: Path) -> None:
 
 
 def test_load_ocel_missing_file_raises() -> None:
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(FileNotFoundError) as exc:
         load_ocel("/nonexistent/path/to/file.jsonocel")
+    msg = str(exc.value)
+    assert "OCEL file not found" in msg
+    assert "server CWD:" in msg
+    assert "PM4PY_MCP_CWD_HINT" in msg
 
 
 def test_load_ocel_unknown_extension_raises(tmp_path: Path) -> None:

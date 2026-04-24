@@ -18,6 +18,7 @@ import pandas as pd
 import pm4py
 from pm4py.objects.ocel.obj import OCEL
 
+from pm4py_mcp._paths import resolve_input_path
 from pm4py_mcp.errors import OptionalDepMissing, UnsupportedFormat, WorkspaceError
 from pm4py_mcp.models import OcelExportResult, OcelSummary
 from pm4py_mcp.server import mcp, registry
@@ -100,10 +101,7 @@ def load_ocel(path: str) -> dict[str, Any]:
     Use ``flatten_ocel`` to project the OCEL onto a single object type and obtain
     a traditional ``log_id`` that composes with every Phase 1 tool.
     """
-    resolved = Path(path).expanduser().resolve()
-    if not resolved.is_file():
-        raise FileNotFoundError(f"OCEL file not found: {resolved}")
-
+    resolved = resolve_input_path(path, kind="OCEL file")
     fmt = _infer_ocel_format(str(resolved))
 
     try:

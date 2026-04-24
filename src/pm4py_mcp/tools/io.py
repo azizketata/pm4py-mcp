@@ -15,6 +15,7 @@ import pandas as pd
 import pm4py
 from mcp.server.fastmcp import Context
 
+from pm4py_mcp._paths import resolve_input_path
 from pm4py_mcp.errors import UnsupportedFormat, WorkspaceError
 from pm4py_mcp.models import ExportResult, LogSummary, WorkspaceEntry
 from pm4py_mcp.server import mcp, registry
@@ -97,10 +98,7 @@ async def load_event_log(
     activities preview, time range, top 5 variants). Never returns the log
     itself — subsequent tools retrieve it by handle.
     """
-    resolved = Path(path).expanduser().resolve()
-    if not resolved.is_file():
-        raise FileNotFoundError(f"Event log not found: {resolved}")
-
+    resolved = resolve_input_path(path, kind="Event log")
     fmt = _infer_format(str(resolved), format)
     size = resolved.stat().st_size
     emit_progress = size > _PROGRESS_THRESHOLD_BYTES

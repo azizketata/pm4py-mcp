@@ -65,8 +65,12 @@ async def test_load_csv_with_column_mapping(tmp_path: Path) -> None:
 
 
 async def test_load_missing_file_raises() -> None:
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(FileNotFoundError) as exc:
         await load_event_log("/nonexistent/path/to/file.xes")
+    msg = str(exc.value)
+    assert "Event log not found" in msg
+    assert "server CWD:" in msg
+    assert "PM4PY_MCP_CWD_HINT" in msg
 
 
 async def test_load_unknown_extension_raises(tmp_path: Path) -> None:
