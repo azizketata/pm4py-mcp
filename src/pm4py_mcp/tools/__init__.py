@@ -14,6 +14,7 @@ from pm4py_mcp.tools import (  # noqa: F401
     abstractions,
     conformance,
     context,
+    conversions,
     discovery,
     filters,
     io,

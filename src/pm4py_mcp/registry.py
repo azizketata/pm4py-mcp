@@ -23,7 +23,20 @@ from typing import Any, Literal
 
 from pm4py_mcp.errors import HandleNotFound, InvalidKind
 
-Kind = Literal["log", "petri_net", "process_tree", "bpmn", "dfg", "ocel", "ocdfg", "ocpn"]
+Kind = Literal[
+    "log",
+    "petri_net",
+    "process_tree",
+    "bpmn",
+    "dfg",
+    "ocel",
+    "ocdfg",
+    "ocpn",
+    "declare",
+    "log_skeleton",
+    "powl",
+    "temporal_profile",
+]
 
 _PREFIX: dict[Kind, str] = {
     "log": "log",
@@ -34,6 +47,10 @@ _PREFIX: dict[Kind, str] = {
     "ocel": "ocel",
     "ocdfg": "ocdfg",
     "ocpn": "ocpn",
+    "declare": "decl",
+    "log_skeleton": "lsk",
+    "powl": "powl",
+    "temporal_profile": "tprof",
 }
 
 
@@ -42,6 +59,10 @@ class _Entry:
     kind: Kind
     payload: Any
     inserted_at: float
+    # 0.4.0: optional breadcrumb pointing at the handle this artifact was
+    # derived from (set by convert_model, filter_*, discover_* with a log_id,
+    # etc.). None for handles created directly from disk (e.g. load_event_log).
+    source_handle: str | None = None
 
 
 class LogRegistry:
@@ -56,15 +77,36 @@ class LogRegistry:
         self._ttl = ttl_seconds
         self._entries: OrderedDict[str, _Entry] = OrderedDict()
 
-    def put(self, kind: Kind, payload: Any) -> str:
-        """Store an artifact and return its freshly minted handle."""
+    def put(self, kind: Kind, payload: Any, *, source_handle: str | None = None) -> str:
+        """Store an artifact and return its freshly minted handle.
+
+        ``source_handle`` records the lineage of the artifact for debuggability
+        (e.g. ``convert_model`` stamps the source model's handle). Default
+        ``None`` for artifacts loaded from disk.
+        """
         if kind not in _PREFIX:
             raise InvalidKind(f"Unknown kind {kind!r}; expected one of {list(_PREFIX)}")
         self._evict_expired()
         handle = self._mint_handle(kind)
-        self._entries[handle] = _Entry(kind=kind, payload=payload, inserted_at=self._now())
+        self._entries[handle] = _Entry(
+            kind=kind,
+            payload=payload,
+            inserted_at=self._now(),
+            source_handle=source_handle,
+        )
         self._evict_to_capacity()
         return handle
+
+    def source_handle(self, handle: str) -> str | None:
+        """Return the ``source_handle`` breadcrumb for a stored artifact.
+
+        Raises ``HandleNotFound`` if the handle is unknown or expired.
+        Returns ``None`` if the artifact was created without a source.
+        """
+        self._evict_expired()
+        if handle not in self._entries:
+            raise HandleNotFound(f"No artifact for handle {handle!r}.")
+        return self._entries[handle].source_handle
 
     def get(self, handle: str, *, expected_kind: Kind | None = None) -> tuple[Kind, Any]:
         """Return ``(kind, payload)`` for a handle, touching it as the most recent.

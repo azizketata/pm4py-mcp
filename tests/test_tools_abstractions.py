@@ -8,13 +8,16 @@ from pm4py_mcp.errors import HandleNotFound, InvalidKind, UnsupportedFormat
 from pm4py_mcp.server import registry
 from pm4py_mcp.tools.abstractions import (
     abstract_case,
+    abstract_declare,
     abstract_dfg,
     abstract_log_attributes,
     abstract_log_features,
+    abstract_log_skeleton,
     abstract_ocdfg,
     abstract_ocel,
     abstract_petri_net,
     abstract_stream,
+    abstract_temporal_profile,
     abstract_variants,
 )
 from tests.fixtures import tiny_log, tiny_ocel, tiny_petri_net
@@ -335,3 +338,64 @@ def test_abstract_ocdfg_wrong_kind_raises() -> None:
 def test_abstract_ocdfg_missing_handle_raises() -> None:
     with pytest.raises(HandleNotFound):
         abstract_ocdfg("ocel-gone")
+
+
+# --- 0.4.0: abstract_declare / abstract_log_skeleton / abstract_temporal_profile ---
+
+
+def test_abstract_declare_happy_path(log_id: str) -> None:
+    from pm4py_mcp.tools.discovery import discover_declare
+
+    declare_id = discover_declare(log_id)["declare_id"]
+    result = abstract_declare(declare_id)
+    _assert_abstraction_shape(result, "abstract_declare", declare_id)
+    # declare_to_descr has no MAX_LEN knob
+    assert result["truncated"] is False
+
+
+def test_abstract_declare_wrong_kind_raises(log_id: str) -> None:
+    with pytest.raises(InvalidKind):
+        abstract_declare(log_id)
+
+
+def test_abstract_declare_missing_handle_raises() -> None:
+    with pytest.raises(HandleNotFound):
+        abstract_declare("decl-gone")
+
+
+def test_abstract_log_skeleton_happy_path(log_id: str) -> None:
+    from pm4py_mcp.tools.discovery import discover_log_skeleton
+
+    lsk_id = discover_log_skeleton(log_id)["log_skeleton_id"]
+    result = abstract_log_skeleton(lsk_id)
+    _assert_abstraction_shape(result, "abstract_log_skeleton", lsk_id)
+    assert result["truncated"] is False
+
+
+def test_abstract_log_skeleton_wrong_kind_raises(log_id: str) -> None:
+    with pytest.raises(InvalidKind):
+        abstract_log_skeleton(log_id)
+
+
+def test_abstract_log_skeleton_missing_handle_raises() -> None:
+    with pytest.raises(HandleNotFound):
+        abstract_log_skeleton("lsk-gone")
+
+
+def test_abstract_temporal_profile_happy_path(log_id: str) -> None:
+    from pm4py_mcp.tools.discovery import discover_temporal_profile
+
+    prof_id = discover_temporal_profile(log_id)["temporal_profile_id"]
+    result = abstract_temporal_profile(prof_id)
+    _assert_abstraction_shape(result, "abstract_temporal_profile", prof_id)
+    assert result["truncated"] is False
+
+
+def test_abstract_temporal_profile_wrong_kind_raises(log_id: str) -> None:
+    with pytest.raises(InvalidKind):
+        abstract_temporal_profile(log_id)
+
+
+def test_abstract_temporal_profile_missing_handle_raises() -> None:
+    with pytest.raises(HandleNotFound):
+        abstract_temporal_profile("tprof-gone")

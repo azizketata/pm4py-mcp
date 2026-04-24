@@ -24,14 +24,17 @@ import pandas as pd
 import pm4py
 from pm4py.algo.querying.llm.abstractions import (
     case_to_descr,
+    declare_to_descr,
     log_to_cols_descr,
     log_to_dfg_descr,
     log_to_fea_descr,
     log_to_variants_descr,
+    logske_to_descr,
     net_to_descr,
     ocel_fea_descr,
     ocel_ocdfg_descr,
     stream_to_descr,
+    tempprofile_to_descr,
 )
 from pm4py.objects.ocel.obj import OCEL
 
@@ -279,14 +282,66 @@ def abstract_ocdfg(
     return AbstractionResult.build(content, max_len, ocel_id, "abstract_ocdfg").as_dict()
 
 
+# --- Phase 2 Part 2 (0.4.0): declarative + behavioral abstractions ---
+
+
+@mcp.tool()
+def abstract_declare(declare_id: str) -> dict[str, Any]:
+    """Natural-language description of a discovered DECLARE model.
+
+    Takes the handle returned by ``discover_declare``. Wraps
+    ``declare_to_descr.apply``. pm4py's descriptor has no MAX_LEN knob, so
+    ``truncated`` is always ``False`` and the full constraint set is
+    described.
+    """
+    _, declare_dict = registry.get(declare_id, expected_kind="declare")
+    content = declare_to_descr.apply(declare_dict)
+    return AbstractionResult.build(content, None, declare_id, "abstract_declare").as_dict()
+
+
+@mcp.tool()
+def abstract_log_skeleton(log_skeleton_id: str) -> dict[str, Any]:
+    """Natural-language description of a discovered log skeleton.
+
+    Takes the handle returned by ``discover_log_skeleton``. Wraps
+    ``logske_to_descr.apply``. No MAX_LEN parameter; always returns the
+    full skeleton in prose.
+    """
+    _, lsk_dict = registry.get(log_skeleton_id, expected_kind="log_skeleton")
+    content = logske_to_descr.apply(lsk_dict)
+    return AbstractionResult.build(
+        content, None, log_skeleton_id, "abstract_log_skeleton"
+    ).as_dict()
+
+
+@mcp.tool()
+def abstract_temporal_profile(temporal_profile_id: str) -> dict[str, Any]:
+    """Natural-language description of a discovered temporal profile.
+
+    Takes the handle returned by ``discover_temporal_profile``. Wraps
+    ``tempprofile_to_descr.apply``. The profile dict is keyed by
+    ``Tuple[str, str]`` activity pairs; the descriptor internally formats
+    these and never surfaces the raw tuples to JSON serialization.
+    No MAX_LEN parameter; full profile is described.
+    """
+    _, profile_dict = registry.get(temporal_profile_id, expected_kind="temporal_profile")
+    content = tempprofile_to_descr.apply(profile_dict)
+    return AbstractionResult.build(
+        content, None, temporal_profile_id, "abstract_temporal_profile"
+    ).as_dict()
+
+
 __all__ = [
     "abstract_case",
+    "abstract_declare",
     "abstract_dfg",
     "abstract_log_attributes",
     "abstract_log_features",
+    "abstract_log_skeleton",
     "abstract_ocdfg",
     "abstract_ocel",
     "abstract_petri_net",
     "abstract_stream",
+    "abstract_temporal_profile",
     "abstract_variants",
 ]

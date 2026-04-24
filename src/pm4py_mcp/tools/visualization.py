@@ -116,9 +116,34 @@ def visualize_bpmn(bpmn_id: str) -> list[Any]:
     return _build_blocks(caption, result.png_path, result.inline_attached)
 
 
+@mcp.tool(structured_output=False)
+def visualize_powl(powl_id: str) -> list[Any]:
+    """Render a POWL model (from ``discover_powl``) as PNG + SVG.
+
+    Graphviz-backed. POWL diagrams show partial-order edges between
+    sub-workflows; the root operator is reported in the caption.
+    """
+    _, powl = registry.get(powl_id, expected_kind="powl")
+    check_graphviz()
+
+    def _save(path: str) -> None:
+        pm4py.save_vis_powl(powl, path)
+
+    result = save_dual_channel(_save, stem="powl", summary_text="")
+    root_op = type(powl).__name__
+    num_children = len(getattr(powl, "children", []) or [])
+    caption = _caption(
+        f"POWL ({powl_id}): root={root_op}, {num_children} top-level children",
+        result.png_path,
+        result.svg_path,
+    )
+    return _build_blocks(caption, result.png_path, result.inline_attached)
+
+
 __all__ = [
     "visualize_bpmn",
     "visualize_dfg",
     "visualize_petri_net",
+    "visualize_powl",
     "visualize_process_tree",
 ]

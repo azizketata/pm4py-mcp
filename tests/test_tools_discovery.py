@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import pytest
 
-from pm4py_mcp.errors import HandleNotFound, UnsupportedFormat
+from pm4py_mcp.errors import HandleNotFound, InvalidKind, UnsupportedFormat
 from pm4py_mcp.server import registry
 from pm4py_mcp.tools.discovery import (
     discover_bpmn,
+    discover_declare,
     discover_dfg,
+    discover_log_skeleton,
     discover_petri_net,
+    discover_powl,
     discover_process_tree,
+    discover_temporal_profile,
 )
 from tests.fixtures import tiny_log
 
@@ -147,3 +151,118 @@ def test_handles_are_distinct_across_kinds(log_id: str) -> None:
     assert tree_id.startswith("pt-")
     assert bpmn_id.startswith("bpmn-")
     assert len({dfg_id, pn_id, tree_id, bpmn_id}) == 4
+
+
+# --- 0.4.0: advanced discovery ---
+
+
+def test_discover_declare_happy_path(log_id: str) -> None:
+    result = discover_declare(log_id)
+    assert result["declare_id"].startswith("decl-")
+    assert result["log_id"] == log_id
+    assert result["num_templates"] > 0
+    assert result["num_constraints"] >= 0
+    assert isinstance(result["templates_preview"], list)
+    # Artifact is reachable under declare kind
+    kind, payload = registry.get(result["declare_id"], expected_kind="declare")
+    assert kind == "declare"
+    assert isinstance(payload, dict)
+
+
+def test_discover_declare_records_source_handle(log_id: str) -> None:
+    result = discover_declare(log_id)
+    assert registry.source_handle(result["declare_id"]) == log_id
+
+
+def test_discover_declare_wrong_kind_raises() -> None:
+    h = registry.put("petri_net", object())
+    with pytest.raises(InvalidKind):
+        discover_declare(h)
+
+
+def test_discover_declare_missing_handle_raises() -> None:
+    with pytest.raises(HandleNotFound):
+        discover_declare("log-nope")
+
+
+def test_discover_log_skeleton_happy_path(log_id: str) -> None:
+    result = discover_log_skeleton(log_id)
+    assert result["log_skeleton_id"].startswith("lsk-")
+    assert result["log_id"] == log_id
+    assert result["noise_threshold"] == 0.0
+    assert result["num_constraint_types"] > 0
+    assert isinstance(result["constraints_per_type"], dict)
+
+
+def test_discover_log_skeleton_records_source_handle(log_id: str) -> None:
+    result = discover_log_skeleton(log_id)
+    assert registry.source_handle(result["log_skeleton_id"]) == log_id
+
+
+def test_discover_log_skeleton_rejects_bad_noise(log_id: str) -> None:
+    with pytest.raises(ValueError):
+        discover_log_skeleton(log_id, noise_threshold=1.5)
+
+
+def test_discover_log_skeleton_wrong_kind_raises() -> None:
+    h = registry.put("petri_net", object())
+    with pytest.raises(InvalidKind):
+        discover_log_skeleton(h)
+
+
+def test_discover_powl_happy_path(log_id: str) -> None:
+    result = discover_powl(log_id)
+    assert result["powl_id"].startswith("powl-")
+    assert result["log_id"] == log_id
+    assert isinstance(result["root_operator"], str)
+    assert result["num_children"] >= 0
+    kind, _ = registry.get(result["powl_id"], expected_kind="powl")
+    assert kind == "powl"
+
+
+def test_discover_powl_records_source_handle(log_id: str) -> None:
+    result = discover_powl(log_id)
+    assert registry.source_handle(result["powl_id"]) == log_id
+
+
+def test_discover_powl_wrong_kind_raises() -> None:
+    h = registry.put("petri_net", object())
+    with pytest.raises(InvalidKind):
+        discover_powl(h)
+
+
+def test_discover_temporal_profile_happy_path(log_id: str) -> None:
+    result = discover_temporal_profile(log_id)
+    assert result["temporal_profile_id"].startswith("tprof-")
+    assert result["log_id"] == log_id
+    assert result["num_pairs"] >= 0
+    kind, payload = registry.get(result["temporal_profile_id"], expected_kind="temporal_profile")
+    assert kind == "temporal_profile"
+    # The stored dict has Tuple[str, str] keys; confirm that shape
+    if payload:
+        k = next(iter(payload.keys()))
+        assert isinstance(k, tuple)
+        assert len(k) == 2
+        assert all(isinstance(s, str) for s in k)
+
+
+def test_discover_temporal_profile_records_source_handle(log_id: str) -> None:
+    result = discover_temporal_profile(log_id)
+    assert registry.source_handle(result["temporal_profile_id"]) == log_id
+
+
+def test_discover_temporal_profile_wrong_kind_raises() -> None:
+    h = registry.put("petri_net", object())
+    with pytest.raises(InvalidKind):
+        discover_temporal_profile(h)
+
+
+def test_all_new_discovery_tools_raise_on_missing_handle() -> None:
+    for fn in (
+        discover_declare,
+        discover_log_skeleton,
+        discover_powl,
+        discover_temporal_profile,
+    ):
+        with pytest.raises(HandleNotFound):
+            fn("log-never-existed")
