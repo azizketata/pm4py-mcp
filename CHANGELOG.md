@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - TBD
+
+Phase 2 Part 2 (first half) — **advanced discovery + model conversions + POWL visualization.** 9 new tools bring the total surface to **58 tools**. Unlocks the three Phase 3-deferred abstractions (`abstract_declare`, `abstract_log_skeleton`, `abstract_temporal_profile`) and introduces POWL and model-conversion workflows. 4 new registry kinds. Semver minor.
+
+### Added
+
+**Advanced discovery (4 tools)** — each stores its artifact under a new registry kind and records the source `log_id` as a lineage breadcrumb.
+- `discover_declare(log_id, min_support_ratio?, min_confidence_ratio?)` — discovers a DECLARE model (17 constraint templates: response, precedence, succession, etc.). Returns `declare_id` + template/constraint counts + top-10 templates by constraint density.
+- `discover_log_skeleton(log_id, noise_threshold=0.0)` — discovers the 6-family behavioral skeleton (equivalence, always_after, always_before, never_together, directly_follows, activ_freq). Returns `log_skeleton_id` + per-type constraint counts.
+- `discover_powl(log_id)` — discovers a POWL (Partially Ordered Workflow Language) model. Returns `powl_id` + root operator name + top-level child count. POWL generalizes process trees with partial-order sibling dependencies.
+- `discover_temporal_profile(log_id)` — discovers per-activity-pair mean + stddev sojourn times. Returns `temporal_profile_id` + pair count. Dict keys are `Tuple[str, str]` — never serialize to JSON directly.
+
+**Abstractions (3 tools)** — the three Phase 3 deferred abstractions, now unlocked because PM4Py 2.7.22.2 provides all required `discover_*` functions natively (including `discover_temporal_profile`, which the 0.3.0 plan incorrectly assumed was missing).
+- `abstract_declare(declare_id)` — wraps `declare_to_descr.apply`. No MAX_LEN knob; always returns the full constraint narrative.
+- `abstract_log_skeleton(log_skeleton_id)` — wraps `logske_to_descr.apply`. No MAX_LEN knob.
+- `abstract_temporal_profile(temporal_profile_id)` — wraps `tempprofile_to_descr.apply`. Handles the tuple-keyed dict internally via pm4py; `truncated` always `False`.
+
+**Visualization (1 tool)**
+- `visualize_powl(powl_id)` — Graphviz-backed dual-channel PNG + SVG via `pm4py.save_vis_powl`. Reuses the existing `save_dual_channel` helper; no new infrastructure. Caption includes root operator and child count.
+
+**Conversions (1 tool)**
+- `convert_model(source_id, target_kind)` — one tool wraps pm4py's three `convert_to_*` functions. Supported pairs:
+  - → `petri_net`: from `bpmn`, `process_tree`, `powl`
+  - → `bpmn`: from `petri_net`, `process_tree`
+  - → `process_tree`: from `petri_net`, `bpmn`, `powl`
+  - Unsupported pairs (e.g. POWL → BPMN — pm4py doesn't expose it directly) raise `InvalidKind` with a clear remediation message. The new handle stamps a `source_handle` breadcrumb on the registry entry so conversion lineage is debuggable.
+
+### Infrastructure
+
+- **4 new registry kinds**: `declare`, `log_skeleton`, `powl`, `temporal_profile` with prefixes `decl-`, `lsk-`, `powl-`, `tprof-` respectively.
+- **`source_handle` breadcrumb** on `LogRegistry._Entry` — optional string field that records the handle an artifact was derived from. Stamped by `convert_model`, all 4 new `discover_*` tools, and available via new `registry.source_handle(handle)` accessor. Existing entries default to `None`; fully backward-compatible.
+- New `src/pm4py_mcp/tools/conversions.py` module; wired into `pm4py_mcp.tools.__init__` via the existing side-effect-import pattern.
+- `scripts/smoke_test_wheel.py` `EXPECTED_CORE_TOOLS` extended with the 9 new tools.
+
+### Design notes
+
+- **POWL abstraction deferred.** `pm4py.algo.querying.llm.abstractions` does NOT ship a `powl_to_descr`. Hand-writing a POWL serializer (StrictPartialOrder + OperatorPOWL + SilentTransition + Transition traversal) is a research-grade endeavor, not a patch. 0.4.0 ships `visualize_powl` only; revisit when/if pm4py upstreams a POWL description function.
+- **Model-conversion consolidation.** Three pm4py functions (`convert_to_petri_net`, `convert_to_bpmn`, `convert_to_process_tree`) become one MCP tool with explicit dispatch, since the shape of the operation is genuinely a one-to-one dispatch table and there's no per-source parameterization to hide.
+
+### Deferred to 0.4.1
+
+Everything that requires new infrastructure beyond the existing Graphviz path:
+
+- **Organizational mining** — 5 tools: `discover_handover_network`, `discover_working_together_network`, `discover_subcontracting_network`, `discover_activity_based_resource_similarity`, `discover_organizational_roles`. Separate 1:1 tools matching the OCEL-filter-style precedent, not consolidated.
+- **Simulation** — `simulate_log(model_id, num_traces)` via `pm4py.play_out`, returning a fresh `log_id` composable with every Phase 1 tool.
+- **Advanced visualization** — `visualize_dotted_chart`, `visualize_performance_spectrum`. Both are matplotlib-backed; requires a new `save_matplotlib_png` helper parallel to `save_dual_channel`.
+- **SNA visualization** — `visualize_sna` deferred indefinitely until a matplotlib-backed renderer replaces pm4py's HTML-only pyvis output (useless for Claude clients).
+- **`/organizational_analysis` prompt** — pairs naturally with 0.4.1's org-mining tools.
+
 ## [0.3.2] - TBD
 
 Dogfooding-driven polish, driven by a same-day full-chain session (`/new_log_onboarding` → `/bottleneck_analysis` → `abstract_case` drill-down) on the Sepsis benchmark. Three concrete problems surfaced and 0.3.2 fixes them. No tool-surface removals; one new tool (`sample_case_ids`) brings the count from 48 to 49.
@@ -254,7 +303,8 @@ First PyPI release claiming the `pm4py-mcp` name. No user-facing functionality b
 - CI matrix: Python 3.10–3.13 × Ubuntu / macOS / Windows.
 - PyPI Trusted Publishing workflow: TestPyPI for pre-release tags, PyPI for release tags.
 
-[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/azizketata/pm4py-mcp/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.4.0
 [0.3.2]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.2
 [0.3.1]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/azizketata/pm4py-mcp/releases/tag/v0.3.0

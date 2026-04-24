@@ -74,8 +74,7 @@ def convert_model(source_id: str, target_kind: TargetKind) -> dict[str, Any]:
     """
     if target_kind not in _SUPPORTED:
         raise InvalidKind(
-            f"Unsupported target_kind {target_kind!r}. "
-            f"Expected one of {sorted(_SUPPORTED)}."
+            f"Unsupported target_kind {target_kind!r}. Expected one of {sorted(_SUPPORTED)}."
         )
 
     source_kind, source_payload = registry.get(source_id)

@@ -55,9 +55,11 @@ async def test_full_phase1_workflow_over_stdio() -> None:
 
             # Phase 1 (24) + Phase 2 OCEL (12) + Phase 3 abstractions (9)
             # + Slice 3 context tools (2) + Slice 4 render_report (1)
-            # + 0.3.2 sample_case_ids (1) = 49.
+            # + 0.3.2 sample_case_ids (1)
+            # + 0.4.0 advanced discovery (4) + abstractions (3) + POWL viz (1)
+            #   + convert_model (1) = 58.
             tools = await session.list_tools()
-            assert len(tools.tools) == 49
+            assert len(tools.tools) == 58
 
             # 1. Load
             r = await session.call_tool("load_event_log", {"path": str(EXAMPLE_XES)})

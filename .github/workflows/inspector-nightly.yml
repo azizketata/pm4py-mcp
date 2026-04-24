@@ -36,14 +36,14 @@ jobs:
       # Inspector CLI invocations are stateless — server spawns fresh each call —
       # so we can't chain log_id/ocel_id through multiple tools. These calls
       # exercise everything that doesn't need a prior handle.
-      - name: Inspector - list tools (expect 49)
+      - name: Inspector - list tools (expect 58)
         run: |
           output=$(npx --yes @modelcontextprotocol/inspector --cli uv run pm4py-mcp --method tools/list)
           echo "$output"
           count=$(echo "$output" | python -c "import json, sys; d=json.load(sys.stdin); print(len(d.get('tools', [])))")
           echo "tool count: $count"
-          if [ "$count" -ne 49 ]; then
-            echo "Expected 49 tools, got $count"
+          if [ "$count" -ne 58 ]; then
+            echo "Expected 58 tools, got $count"
             exit 1
           fi
 

@@ -2,7 +2,7 @@
 
 An AGPL-licensed, stdio-first **Model Context Protocol** server that wraps [PM4Py](https://github.com/process-intelligence-solutions/pm4py) behind a small handle-based tool surface — making research-grade process mining available to Claude and any MCP-capable agent, locally and on open standards (XES, **OCEL 2.0**, BPMN, PNML).
 
-> **Status:** Phase 3 shipped — `pm4py-mcp 0.3.2` ships **49 workflow-shaped tools + 6 curated prompts** spanning I/O, discovery, conformance, filtering, statistics, visualization, OCEL 2.0 object-centric process mining, **textual abstractions** the LLM can reason over, **domain-context injection**, and **Markdown report rendering**. Installable via `uvx pm4py-mcp`. (0.3.2 adds `sample_case_ids`, sparse-by-default `abstract_case`, and output-path `PM4PY_MCP_CWD_HINT` support — all driven by end-to-end dogfooding on Sepsis.)
+> **Status:** Phase 2 Part 2 (first half) shipped — `pm4py-mcp 0.4.0` ships **58 workflow-shaped tools + 6 curated prompts** spanning I/O, discovery (now including DECLARE, log skeleton, POWL, temporal profile), conformance, filtering, statistics, visualization, OCEL 2.0, textual abstractions, domain-context injection, model conversions, and Markdown report rendering. Installable via `uvx pm4py-mcp`. (0.4.0 adds 4 advanced discovery tools + 3 new abstractions + POWL visualization + a consolidated `convert_model` tool. Organizational mining, simulation, and matplotlib-backed advanced viz land in 0.4.1.)
 
 **Today** — load XES / CSV / Parquet logs or OCEL 2.0 (JSON / XML / SQLite), discover Petri nets / process trees / BPMN / DFGs / object-centric Petri nets / OC-DFGs, run token-replay or alignment conformance, filter chains, render dual-channel PNG + SVG — and now **turn every artifact into a textual abstraction the LLM can read directly**, **register domain SOPs that prompts respect across the session**, and **render a final Markdown report from accumulated findings**. 48 natural-language tools + 6 slash-command prompts, fully local, nothing leaves your machine.
 
@@ -98,7 +98,7 @@ Once a benchmark log is downloaded, the fastest way to see 0.3.0's agentic layer
 
 Claude chains `load_event_log` → `describe_log` → `abstract_log_features` → `abstract_log_attributes` → `abstract_variants` and writes a ≤300-word first-impression summary covering case count, activity spread, dominant variants, and anomalies — in **one turn**, no manual tool chaining. This is the same prompt library 0.3.0 ships six canonical entries for: `/new_log_onboarding`, `/conformance_workflow`, `/bottleneck_analysis`, `/variant_exploration`, `/ocel_flattening_workflow`, `/executive_summary`.
 
-## Tool catalog (Phase 1 + 2 + 3 — 49 tools)
+## Tool catalog (Phase 1 + 2 + 3 + 2 Part 2 — 58 tools)
 
 All tools accept a handle (`log_id`, `petri_id`, `ocel_id`, …) or — for `load_*` tools — a file path. None returns the log itself; responses are always compact summaries plus new handles.
 
@@ -135,6 +135,19 @@ All tools accept a handle (`log_id`, `petri_id`, `ocel_id`, …) or — for `loa
 | `discover_process_tree(log_id, noise_threshold)` | Process tree via Inductive Miner. |
 | `discover_bpmn(log_id, noise_threshold)` | BPMN via Inductive Miner + conversion. |
 
+### Advanced discovery (4) **(0.4.0)**
+| Tool | Purpose |
+|---|---|
+| `discover_declare(log_id, min_support_ratio?, min_confidence_ratio?)` | DECLARE model: 17 constraint templates (response, precedence, succession, ...). |
+| `discover_log_skeleton(log_id, noise_threshold)` | 6-family behavioral skeleton (equivalence, always_after, ...). |
+| `discover_powl(log_id)` | POWL (Partially Ordered Workflow Language) model. |
+| `discover_temporal_profile(log_id)` | Per-activity-pair mean + stddev sojourn times. |
+
+### Model conversions (1) **(0.4.0)**
+| Tool | Purpose |
+|---|---|
+| `convert_model(source_id, target_kind)` | Convert between `petri_net` / `bpmn` / `process_tree` (POWL input supported where pm4py allows). Stamps `source_handle` breadcrumb for lineage. |
+
 ### OCEL discovery (2)
 | Tool | Purpose |
 |---|---|
@@ -168,7 +181,7 @@ Four tools wrap 7 PM4Py filter functions via `level` / `strategy` dispatch. Each
 | `filter_ocel_object_types(ocel_id, types, retain)` | Keep or drop whole object types. |
 | `filter_ocel_cc(ocel_id, strategy, value, retain)` | Connected-component filter. `strategy` ∈ `{activity, object, otype, length}`. |
 
-### Traditional visualization (4)
+### Traditional visualization (5)
 Each viz tool saves **both PNG and SVG** to `~/.pm4py-mcp/workspace/`, returns a caption with absolute paths, and embeds the PNG inline when it fits under ~700 KB.
 
 | Tool | Purpose |
@@ -177,6 +190,7 @@ Each viz tool saves **both PNG and SVG** to `~/.pm4py-mcp/workspace/`, returns a
 | `visualize_dfg(dfg_id)` | Render a DFG. |
 | `visualize_process_tree(tree_id)` | Render a process tree. |
 | `visualize_bpmn(bpmn_id)` | Render a BPMN diagram. |
+| `visualize_powl(powl_id)` | Render a POWL model — partial-order edges between sub-workflows. **(0.4.0)** |
 
 ### OCEL visualization (2)
 | Tool | Purpose |
@@ -184,7 +198,7 @@ Each viz tool saves **both PNG and SVG** to `~/.pm4py-mcp/workspace/`, returns a
 | `visualize_ocdfg(ocdfg_id)` | Render an OC-DFG — edges colored per object type. |
 | `visualize_oc_petri_net(ocpn_id)` | Render an OCPN — per-type places and cross-type shared transitions. |
 
-### Textual abstractions (9)
+### Textual abstractions (12)
 Every abstraction returns `{content, approx_tokens, truncated, source_handle, tool}` so Claude can reason over the text instead of a PNG it can't read. Uses `pm4py.algo.querying.llm.abstractions.*_to_descr` under the hood.
 
 | Tool | Purpose |
@@ -193,11 +207,14 @@ Every abstraction returns `{content, approx_tokens, truncated, source_handle, to
 | `abstract_log_attributes(log_id, max_len?)` | Case/event attribute distributions. |
 | `abstract_variants(log_id, max_len?, include_performance?)` | Ranked variants with durations. |
 | `abstract_dfg(log_id, max_len?, include_performance?)` | DFG in prose with sojourn times. |
-| `abstract_case(log_id, case_id, include_event_attributes?)` | Single-case walk-through. |
+| `abstract_case(log_id, case_id, include_event_attributes?, drop_nan_attrs?)` | Single-case walk-through; NaN-attrs dropped by default (0.3.2). |
 | `abstract_stream(log_id, max_len?)` | Reverse-chronological event tail. |
 | `abstract_petri_net(petri_id)` | Structural description of places/transitions/markings. |
 | `abstract_ocel(ocel_id, object_type, max_len?)` | Per-object-type event description for an OCEL. |
 | `abstract_ocdfg(ocel_id, max_len?, include_performance?)` | Object-centric DFG in prose. |
+| `abstract_declare(declare_id)` | Prose description of a DECLARE model's constraints. **(0.4.0)** |
+| `abstract_log_skeleton(log_skeleton_id)` | Prose description of a log skeleton's 6 constraint types. **(0.4.0)** |
+| `abstract_temporal_profile(temporal_profile_id)` | Prose description of per-pair mean/stddev sojourn times. **(0.4.0)** |
 
 ### Domain context (2)
 Register a once-per-session SOP or glossary — every prompt template prepends it automatically.
@@ -237,8 +254,9 @@ User-invoked via `@mcp.prompt`. Each seeds a canonical investigation and respect
 | 0 | Walking skeleton: packaging, `ping` tool, CI test pyramid | ✅ shipped (0.0.1) |
 | 1 | Core traditional-log toolkit: load / discover / conform / filter / visualize | ✅ shipped (0.1.0) |
 | 2 Part 1 | OCEL 2.0 namespace + the flatten bridge | ✅ shipped (0.2.0) |
-| 3 | Agentic layer: textual abstractions, prompt library, domain context, reports | ✅ **shipped (0.3.0)** |
-| 2 Part 2 | Advanced discovery (DECLARE, POWL, log skeleton, organizational mining), conversions, simulation, advanced viz | planned (0.4.0) |
+| 3 | Agentic layer: textual abstractions, prompt library, domain context, reports | ✅ shipped (0.3.0) |
+| 2 Part 2 (first half) | Advanced discovery (DECLARE, log skeleton, POWL, temporal profile), 3 new abstractions, POWL viz, model conversions | ✅ **shipped (0.4.0)** |
+| 2 Part 2 (second half) | Organizational mining (handover / working-together / subcontracting / similarity / roles), simulation (`play_out`), advanced matplotlib viz (dotted chart, performance spectrum), `/organizational_analysis` prompt | planned (0.4.1) |
 | 3.1 | `run_duckdb_sql`, `semantic_anomaly_detect` (needs `@server.task` sampling) | planned |
 | 4 | Hardening: Streamable HTTP, sandboxed `exec_python`, connectors, `.mcpb` bundle | planned |
 
@@ -252,7 +270,7 @@ See [Roadmap of development.pdf](Roadmap%20of%20development.pdf) for the archite
 - **Tools raise exceptions, never return error strings.** FastMCP converts raised exceptions into `isError=true` responses the LLM can recover from.
 - **Long-running tools emit progress** via `ctx.report_progress` — alignments on a 500 MB log can exceed five minutes and need client timeout resets.
 - **Aggressive consolidation over API-mirroring.** OCEL filtering wraps 7 PM4Py functions behind 4 tools via `strategy` / `level` dispatch; 4 CC variants share a single verb. Smaller tool surface → smaller prompt → cleaner LLM choices.
-- **Tool surface stays focused.** 48 workflow-shaped verbs — not 1:1 with PM4Py's ~200-function API.
+- **Tool surface stays focused.** 58 workflow-shaped verbs — not 1:1 with PM4Py's ~200-function API.
 - **Abstract-then-prompt.** Phase 3 adds textual abstractions alongside every visual one: instead of handing the LLM a PNG it can't read, pm4py-mcp exposes `abstract_*` tools that return the same artifact as prose. The prompt library then guides Claude through the abstract-then-reason loop so answers cite numbers and activity names instead of generalities.
 
 ## License
